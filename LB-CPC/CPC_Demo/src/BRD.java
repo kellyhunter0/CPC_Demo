@@ -26,10 +26,31 @@ import java.util.Random;
 //
 //
 //Improves == improvement in global fitness.
-// 
+/*
+ * A game G has a set D of n drivers. Each driver, i, ha a strategy space Pi, and the driver chooses a strategy p sub i is an element of the set P
+ * 
+ *  Strategy profiles are a vector of strategies for each player, 
+ *  	p=(p sub i ,..., p sub n) 
+ *  The strategy profile for each player i is denoted by p sub -i.
+ *  Therefore, it is useful to denote a strategy profile as p = (p sub i, p sub -i)
+ *  
+ *  For a set of drivers I, p sub I and p sub -I, 
+ *  the strategy profile of drivers in I and in D/I will result in (p sub I, p sub -I)
+ *  
+ *  Each driver will have a cost function:
+ *   - 	cost function { c sub i : P -> R sup >= 0 } 
+ *  	where 
+ *  		c sub i(p) denotes drivers i's cost in the strategy profile p. 
+ *  
+ *  Each driver wishes to minimise their cost, and in the context of this problem specifically:
+ *  	- Drivers wish to minimise the number of high priority 
+ *  	  constraints that are broken in the solution set provided by the GA.
+ */
 
 public class BRD {
 	private static Random rnd = new Random();
+	private static ArrayList<Driver> drivers;
+	
 	
 	/*
 	 * This function will run Best Response Dynamics, also known as Better Response Dynamics, as a means of comparison to the GA
@@ -43,6 +64,13 @@ public class BRD {
 			
 			
 		}
+	}
+	
+	private static ArrayList<Driver> getDriverSchedule() {
+		return drivers;
+	}
+	private static ArrayList<Driver> setDriverSchedule(ArrayList<Driver> drivers) {
+		return drivers;
 	}
 	
 	/*
@@ -99,9 +127,13 @@ public class BRD {
 	
 	private static void allocate(ArrayList<TrainingSlot> solution, TrainingSlot t, Individual[] pop) {
 		// allocate slot to a person in the population
-		// check the priority
+		// check priority and prioritise high constraints that have been broken, 
+		//as well as fix other schedules that are 'broken'
 	}
 	
+	/*
+	 * Checks priority level of custom constraints and 
+	 */
 	private static void checkPriority(CustomConstraint c, ArrayList<CustomConstraint> cp ) {
 		if(c.getPriority() == ConstraintPriority.high) {
 			
@@ -113,12 +145,25 @@ public class BRD {
 			
 		}
 	}
+	/*
+	 * This function calculates the cost of a drivers strategy profile and map this to a social cost
+	 * So, if drivers swap training days, this assigns a cost to each driver. The lower the cost, the better the utility is for that driver. 
+	 */
+	private static void socialObjective() {
+		
+	}
 	
+	/*
+	 * Finds the best slot based on the cost of the social objective function
+	 */
 	private static void findBestSlot() {
 		// k best slots
 		// sorting algorithm maybe?
 	}
 	
+	/*
+	 * Finds owner of the slot when a best slot is found
+	 */
 	private static void owner(ArrayList<TrainingSlot> solution) {
 		// swap maybe?
 	}
