@@ -1,0 +1,5 @@
+#A set of test constraints
+driver 123 must not be after week 3 with high priority
+driver 226 must not be after week 23 with low priority
+driver 1500 must not be in week 12 with medium priority
+group EBT must not be in week 35
