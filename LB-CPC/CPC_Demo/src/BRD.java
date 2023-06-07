@@ -26,7 +26,10 @@ import java.util.Random;
 //
 //
 //Improves == improvement in global fitness.
-/*
+/*__________________________
+ * 
+ * Some notes
+ * _________________________
  * A game G has a set D of n drivers. Each driver, i, ha a strategy space Pi, and the driver chooses a strategy p sub i is an element of the set P
  * 
  *  Strategy profiles are a vector of strategies for each player, 
@@ -44,8 +47,10 @@ import java.util.Random;
  *  
  *  Each driver wishes to minimise their cost, and in the context of this problem specifically:
  *  	- Drivers wish to minimise the number of high priority 
- *  	  constraints that are broken in the solution set provided by the GA.
+ *  	  constraints that are broken in the solution set provided by the GA. 
+ *  The associated cost of broken constraints based on their priority rating can be found in the ProblemParameters.java file
  */
+
 
 public class BRD {
 	private static Random rnd = new Random();
