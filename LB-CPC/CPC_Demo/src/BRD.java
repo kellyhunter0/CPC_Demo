@@ -29,6 +29,7 @@ import java.util.Random;
 /*__________________________
  * 
  * Some notes
+ *  originally from: https://cs.idc.ac.il/~tami/Papers/sagt17.pdf 
  * _________________________
  * A game G has a set D of n drivers. Each driver, i, ha a strategy space Pi, and the driver chooses a strategy p sub i is an element of the set P
  * 
