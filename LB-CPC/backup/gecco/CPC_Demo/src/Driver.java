@@ -1,0 +1,49 @@
+
+
+public class Driver {
+	private String ID;//Unique id
+	private int expiresWeek;//week of license expiry
+	private boolean finalYear;//True if license expires this year
+	private Group group;
+	private int[] duties;//Duties by week
+	
+	public Driver(String ID, int expiresWeek, boolean finalYear, Group group, int[] duties) throws Exception {
+		this.ID = ID;
+		while(this.ID.length()<5)
+			this.ID = " "+this.ID;
+		
+		if ((expiresWeek >=0) &&(expiresWeek < ProblemParameters.WEEKS))
+			this.expiresWeek = expiresWeek;
+		else
+			throw new Exception("Invalid expiry week - driver"+expiresWeek);
+		
+		this.duties = duties;
+		this.finalYear = finalYear;
+		this.group = group;
+
+	}
+
+	public int getDuty(int week) {
+		return duties[week];
+	}
+	
+	public String toString() {
+		return ID +"," + expiresWeek +"," + finalYear  + "," +group;
+	}
+	
+	public int getExpiresWeek() {
+		return expiresWeek;
+	}
+	
+	public boolean finalYear() {
+		return finalYear;
+	}
+	
+	public Group group() {
+		return group;
+	}
+	
+	public String getID(){
+		return ID;
+	}
+}

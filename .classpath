@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="LB-CPC/backup/gecco/CPC_Demo/src"/>
+	<classpathentry kind="src" path="LB-CPC/CPC_Demo/src"/>
+	<classpathentry kind="output" path="LB-CPC/CPC_Demo/bin"/>
+</classpath>

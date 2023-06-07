@@ -1,0 +1,4 @@
+INDEX VERSION 1.131+/Users/neilurquhart/Dropbox/LB-CPC/.metadata/.plugins/org.eclipse.jdt.core
+1530788415.index
+1865797976.index
+1816963510.index

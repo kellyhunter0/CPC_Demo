@@ -1,0 +1,337 @@
+import java.util.ArrayList;
+import java.util.Random;
+
+public class Individual {
+	private Random rnd = new Random();
+	private ArrayList<Gene> chromosome;
+	private ArrayList<TrainingSlot> free;
+	private boolean modified = true;
+	private int fitness;
+	private int expired=0;
+	private int lates=0;
+	private int groupImbalanced=0;
+	private int[][][]participants = new int[ProblemParameters.WEEKS][][];
+
+	private static int[] targets=null;//Targets from each group
+
+	public Individual() {
+		init();
+		if (targets==null) {
+			int tDrivers = DriverFactory.getDriverList().size();
+			targets = new int[Group.values().length];
+			for(Group g :Group.values()) {
+				int count=0;
+				for (Driver d : DriverFactory.getDriverList()) {
+					if (d.group()==g)					
+						count++;
+				}
+				float t =  (count/(float)tDrivers)*ProblemParameters.TRAINING_PLACES;
+				targets[g.ordinal()] = Math.round(t);
+				targets[g.ordinal()]++;
+				//				System.out.println("Target " + g.name() + " "+targets[g.ordinal()]);
+			}
+
+		}
+
+	}
+	public int fitness() {
+		//		try {
+		//			this.verify();
+		//		} catch (Exception e) {
+		//			// TODO Auto-generated catch block
+		//			e.printStackTrace();
+		//			System.exit(-1);
+		//		}
+
+		if (modified) {
+	
+			modified = false;
+			fitness =0;
+			lates=0;
+			expired=0;
+			groupImbalanced=0;
+
+			//Count participants from each group.
+			//			int[][][]participants = new int[ProblemParameters.WEEKS][][];
+			for (int x=0;x < participants.length; x++ ) {
+				//participants[x] = new int[7][];
+				for (int d=0; d < 7; d++) {
+					for (int g =0; g < Group.values().length; g++ )
+						participants[x][d][g] = 0;//new int[Group.values().length];
+				}
+			}
+
+
+
+			for (Gene g : chromosome) {
+				Driver d  = g.driver;
+				TrainingSlot s = g.slot;
+				//Check for late shifts (assume lates are evens)
+				int week = s.getWeek();
+				int day  = s.getDay();
+				int duty = d.getDuty(week);
+				if (duty==1) {
+					fitness = fitness + ProblemParameters.PENALTY_LATE_SHIFT;
+					lates++;
+				}
+
+				//Check for training after expiry
+				if (d.finalYear()) {
+					if(week >  d.getExpiresWeek()) {
+						fitness = fitness + ProblemParameters.PENALTY_EXPIRED_LICENSE;
+						expired++;
+					}
+				}
+				//Log participation
+
+				participants[week][day][d.group().ordinal()]++;
+
+			}
+			//Check for imbalance in participants
+			for (int[][] p : participants) {
+				for (int d=0; d < 7; d++) {
+					for (Group g : Group.values()) {
+						if (p[d][g.ordinal()]>targets[g.ordinal()]) {
+							int over = p[d][g.ordinal()]-targets[g.ordinal()];
+							groupImbalanced=groupImbalanced+over;
+							fitness = fitness +(over *ProblemParameters.PENALTY_GROUP_IMBALANCE);
+						}
+					}
+				}
+			}
+
+		}
+
+		String intermediate = this.getIntermediate();
+//		System.out.println(intermediate);
+
+		return fitness;
+	}
+
+
+	public void initParticipants() {
+		participants = new int[ProblemParameters.WEEKS][][];
+		for (int x=0;x < participants.length; x++ ) {
+			participants[x] = new int[7][];
+			for (int d=0; d < 7; d++) {
+				participants[x][d] = new int[Group.values().length];
+			}
+		}
+
+	}
+	public void init() {
+		modified = true;
+		initParticipants();
+		//Random init
+		free = new ArrayList<TrainingSlot>();
+		chromosome = new ArrayList<Gene>();
+
+		try {
+			free.addAll(SlotFactory.getSlotSet() ) ;
+
+			//Now create genes
+			for (Driver d : DriverFactory.getDriverList()) {
+				Gene g = new Gene();
+				g.driver = d;
+				g.slot = getRndUnalloc(d);
+				chromosome.add(g);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private TrainingSlot getRndUnalloc(Driver d) {
+		//Bias towards early shift & unexpired
+
+		int idx = rnd.nextInt(free.size());
+
+		for (int tries =0; tries <=150; tries++) {
+			TrainingSlot s = free.get(idx);
+			int week = s.getWeek();
+			if (d.finalYear()) {
+				if (week <= d.getExpiresWeek())
+					break;
+			}else {
+				
+				int duty = d.getDuty(week);
+				if (duty==2) {
+					break;
+				}
+			}
+			idx = rnd.nextInt(free.size());
+		}
+		return free.remove(idx);
+	}
+
+	public void mutate() {
+		modified = true;
+		//mutate
+		if (rnd.nextBoolean()) {
+			//Sawp
+			Gene g1 = chromosome.get(rnd.nextInt(chromosome.size()));
+			Gene g2 = chromosome.get(rnd.nextInt(chromosome.size()));
+			TrainingSlot tmp = g1.slot;
+			g1.slot = g2.slot;
+			g2.slot = tmp;
+		}else {
+			//Swap to unalloc
+			Gene g1 = chromosome.get(rnd.nextInt(chromosome.size()));
+			TrainingSlot tmp = free.remove(rnd.nextInt(free.size()));
+			free.add(g1.slot);
+			g1.slot = tmp;
+		}
+
+
+	}
+
+	public Individual(Individual p1, Individual p2) throws Exception {
+		initParticipants();
+		modified = true;
+		//Crossover constructor
+		free = new ArrayList<TrainingSlot>();
+		free.addAll(SlotFactory.getSlotSet()) ;
+		chromosome = new ArrayList<Gene>();
+
+		for (int count =0; count <  p1.chromosome.size(); count ++) {
+			Gene g  = new Gene();
+			Gene p1g = p1.chromosome.get(count);
+			Gene p2g = p2.chromosome.get(count);
+			g.driver = p1g.driver;
+			if (rnd.nextBoolean()) {
+				//Add p1
+				TrainingSlot s = p1g.slot;
+				if (free.contains(s)) {
+					g.slot = s;
+					free.remove(s);
+				}else {
+					s = p2g.slot;
+					if (free.contains(s)) {
+						g.slot = s;
+						free.remove(s);
+					}else {
+						s = free.remove(0);
+						g.slot=s;
+					}
+				}
+			}else{
+				//Add p2
+				TrainingSlot s = p2g.slot;
+				if (free.contains(s)) {
+					g.slot = s;
+					free.remove(s);
+				}else {
+					s = p1g.slot;
+					if (free.contains(s)) {
+						g.slot = s;
+						free.remove(s);
+					}else {
+						s = free.remove(0);
+						g.slot=s;
+					}
+				}
+			}
+			chromosome.add(g);
+		}
+	}
+
+	public void printSummary() {
+		if (modified) {
+			this.fitness();
+		};
+		//...
+		System.out.println("CPC Plan");
+		System.out.println("Issues :");
+		System.out.println("CPC on lates shift: \t" +lates); 
+		System.out.println("License expired before training: \t"+expired);
+		System.out.println("Imbalanced group places: \t"+groupImbalanced);
+	}
+
+	public void printSol() {
+		System.out.println("Plan by week / day ");
+		System.out.println("Week , Day , Driver ID ,Group,Duty,Expiry Week, Final Year" );
+		//Print by week
+		for (int week =0; week < ProblemParameters.WEEKS; week++) {
+			for (int day =0; day < 7; day ++) {
+				for (Gene g : chromosome) {
+					if ((g.slot.getWeek() == week) && (g.slot.getDay()==day)) {
+
+						System.out.print(week + "," +day +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(week)+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear() );
+						if (g.driver.finalYear())
+							if(g.driver.getExpiresWeek() < week)
+								System.out.print(", LICENSE EXPIRED!");
+						
+						if (g.driver.getDuty(week)==1)
+							System.out.print(", ON LATE DUTY!");
+						System.out.println();
+					}
+				}
+			}
+		}
+	}
+	
+	private String getIntermediate() {
+		String buffer="";
+		//Print by week
+		
+		for (Gene g : chromosome) {
+				buffer =  ("WK:"+g.slot.getWeek() + "DY:" +g.slot.getDay() +"ID:" + g.driver.getID() +"GR:" +g.driver.group().name() + "DY:" +g.driver.getDuty(g.slot.getWeek())+"XW:"+g.driver.getExpiresWeek() + "FY:"+g.driver.finalYear() );	
+		}
+		return buffer;
+	}
+
+
+	public Individual (Individual other) {
+		initParticipants();
+		//Copy constructor
+		this.chromosome = new ArrayList<Gene>();
+		for (Gene og : other.chromosome) {
+			Gene ng = new Gene();
+			ng.driver = og.driver;
+			ng.slot = og.slot;
+			this.chromosome.add(ng);
+		}
+
+		this.free = new ArrayList<TrainingSlot>();
+		for (TrainingSlot s : other.free)
+			this.free.add(s);
+
+		modified = true;
+	}
+
+	private void verify() throws Exception {
+		/* Verify that the chromsome contains a valid solution */
+		ArrayList<TrainingSlot> slots = SlotFactory.getSlotSet();
+
+
+		for (Gene g : chromosome) {
+			if (g.driver == null)
+				throw new Exception("Null driver in gene");
+
+			if (g.slot == null)
+				throw new Exception("Null slot in gene");
+
+
+			if (slots.contains(g.slot)) {
+				slots.remove(slots.indexOf(g.slot));
+			}else {
+				throw new Exception("Duplicated slot ");
+			}
+		}
+
+		for (TrainingSlot s : free) {
+			if (slots.contains(s)) {
+				slots.remove(slots.indexOf(s));
+			}else {
+				throw new Exception("Duplicate unallocated slot");
+			}
+		}
+		if (slots.size() !=0) {
+			throw new Exception("Extra slots left");
+		}
+	}
+	public String stats() {
+		return  "fit," +fitness +",lates,"+lates +",expired,"+expired +",imbalance,"+groupImbalanced;
+	}
+}

@@ -1,0 +1,81 @@
+Dataset 665
+Run 0
+Final
+401539,left,0,fit,5,lates,5,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	5
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 1
+Final
+415513,left,0,fit,6,lates,6,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	6
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 2
+Final
+324186,left,0,fit,12,lates,12,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	12
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 3
+Final
+370325,left,0,fit,10,lates,10,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	10
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 4
+Final
+384886,left,0,fit,6,lates,6,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	6
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 5
+Final
+348799,left,0,fit,11,lates,11,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	11
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 6
+Final
+385742,left,0,fit,7,lates,7,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	7
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 7
+Final
+292861,left,0,fit,10,lates,10,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	10
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 8
+Final
+349069,left,0,fit,11,lates,11,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	11
+License expired before training: 	0
+Imbalanced group places: 	0
+Run 9
+Final
+349550,left,0,fit,8,lates,8,expired,0,imbalance,0
+CPC Plan
+Issues :
+CPC on lates shift: 	8
+License expired before training: 	0
+Imbalanced group places: 	0

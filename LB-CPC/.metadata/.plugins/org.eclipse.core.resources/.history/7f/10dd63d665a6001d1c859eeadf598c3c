@@ -1,0 +1,650 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class Individual {
+	private Random rnd = new Random();
+	private ArrayList<Gene> chromosome;
+	private ArrayList<TrainingSlot> free;
+	private boolean modified = true;
+	private int fitness;
+	private int expired=0;
+	private int lates=0;
+	private int groupImbalanced=0;
+	private int lowConstraintViolations=0;
+	private int mediumConstraintViolations=0;
+	private int highConstraintViolations=0;
+
+	private int[][][]participants = new int[ProblemParameters.WEEKS][][];
+	private static ArrayList<CustomConstraint> customConstraints;
+
+
+	private static int[] targets=null;//Targets from each group
+
+	//	public static void loadConstraints() {
+	//		//		constraintsPresent = new ArrayList<String>();
+	//		//		constraintsNotPresent = new ArrayList<String>();
+	//		customConstraints = new ArrayList<CustomConstraint>();
+	//		String fileName = "./constraints.txt";
+	//
+	//
+	//		try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+	//			String line;
+	//			int lineNo=1;
+	//			while ((line = br.readLine()) != null) {
+	//				//process line
+	//				CustomConstraint cp=null;
+	//				try {
+	//					cp = Parser.parse(line);
+	//
+	//				}catch(Exception e) {
+	//					System.out.println("Error reading constraints \nLine no " + lineNo +" "+ e.getMessage());
+	//					System.exit(-1);
+	//				}
+	//				if (cp != null) {
+	//					customConstraints.add(cp);
+	//					//					char ch = line.charAt(0);
+	//					//					line = line.substring(1);
+	//					//					if (ch=='+') {
+	//					//						constraintsPresent.add(line);
+	//					//					}
+	//					//					if (ch=='-') {
+	//					//						constraintsNotPresent.add(line);
+	//					//					}
+	//				}
+	//				lineNo++;
+	//
+	//			}
+	//		} catch (FileNotFoundException e) {
+	//			e.printStackTrace();
+	//		} catch (IOException e) {
+	//			e.printStackTrace();
+	//		}
+	//
+	//	}
+	public static void setConstraints(ArrayList<String> text) {
+		//		constraintsPresent = new ArrayList<String>();
+		//		constraintsNotPresent = new ArrayList<String>();
+		customConstraints = new ArrayList<CustomConstraint>();
+
+
+		int lineNo=1;
+		for (String line : text) {
+			//process line
+			CustomConstraint cp=null;
+			try {
+				cp = Parser.parse(line);
+
+			}catch(Exception e) {
+				System.out.println("Error reading constraints \nLine no " + lineNo +" "+ e.getMessage());
+				System.exit(-1);
+			}
+			if (cp != null) {
+				customConstraints.add(cp);
+			}
+			lineNo++;
+		}
+	}
+	public Individual() {
+		init();
+		if (targets==null) {
+			int tDrivers = DriverFactory.getDriverList().size();
+			targets = new int[Group.values().length];
+			for(Group g :Group.values()) {
+				int count=0;
+				for (Driver d : DriverFactory.getDriverList()) {
+					if (d.group()==g)					
+						count++;
+				}
+				float t =  (count/(float)tDrivers)*ProblemParameters.TRAINING_PLACES;
+				targets[g.ordinal()] = Math.round(t);
+				targets[g.ordinal()]++;
+				//				System.out.println("Target " + g.name() + " "+targets[g.ordinal()]);
+			}
+
+		}
+
+	}
+	public int fitness() {
+		//		try {
+		//			this.verify();
+		//		} catch (Exception e) {
+		//			// TODO Auto-generated catch block
+		//			e.printStackTrace();
+		//			System.exit(-1);
+		//		}
+
+		if (modified) {
+			ProblemParameters.EVALS++;
+			modified = false;
+			fitness =0;
+			lates=0;
+			expired=0;
+			groupImbalanced=0;
+			lowConstraintViolations=0;
+			mediumConstraintViolations=0;
+			highConstraintViolations=0;
+			//Count participants from each group.
+			for (int x=0;x < participants.length; x++ ) {
+				for (int d=0; d < 7; d++) {
+					for (int g =0; g < Group.values().length; g++ )
+						participants[x][d][g] = 0;
+				}
+			}
+
+
+			for (Gene g : chromosome) {
+				
+				if (checkLate(g)) {
+					fitness = fitness + ProblemParameters.PENALTY_LATE_SHIFT;
+					lates++;
+				}
+				//Check for training after expiry
+				if (checkExpiry(g)) {
+					fitness = fitness + ProblemParameters.PENALTY_EXPIRED_LICENSE;
+					expired++;
+				}
+				//Log participation
+				participants[g.slot.getWeek()][g.slot.getDay()][g.driver.group().ordinal()]++;
+
+			}
+			//Check for imbalance in participants
+			checkImbalance();
+			checkCustomConstraints();
+		}
+		return fitness;
+	}
+	
+	private void checkCustomConstraints(Gene g, String intermediate) {
+		for (CustomConstraint cp : customConstraints) {
+			if (!cp.mustAppear()) {
+				int found = 0;
+					//Matcher matcher = pattern.matcher(i);
+					Matcher matcher = cp.getPattern().matcher(intermediate);
+					if (matcher.find()) {
+						found ++;
+					}
+				
+
+				int p=1;
+				if (found > 0)
+					System.out.println("\t Violation " + cp.getSource() );
+//				if (cp.getPriority() == ConstraintPriority.high) {
+//					p = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION;
+//					highConstraintViolations  = highConstraintViolations + found;
+//				}
+//				if (cp.getPriority() == ConstraintPriority.medium) {
+//					p = ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION;
+//					mediumConstraintViolations  = mediumConstraintViolations + found;
+//				}
+//				if (cp.getPriority() == ConstraintPriority.low) {
+//					p = ProblemParameters.PENALTY_LOW_CONSTRAINT_VIOLATION;
+//					lowConstraintViolations  = lowConstraintViolations + found;
+//				}
+
+
+			}else {
+				boolean found = false;
+					Matcher matcher = cp.getPattern().matcher(intermediate);
+					if (matcher.find()) {
+						found = true;
+						break;
+					}
+				
+				if (!found) {
+					int p=1;
+					System.out.println("\t Violation " + cp.getSource() );
+//					if (cp.getPriority() == ConstraintPriority.high) {
+//						p = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION;
+//						highConstraintViolations ++;
+//					}
+//					if (cp.getPriority() == ConstraintPriority.medium) {
+//						p = ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION;
+//						mediumConstraintViolations ++;
+//					}
+//					if (cp.getPriority() == ConstraintPriority.low) {
+//						p = ProblemParameters.PENALTY_LOW_CONSTRAINT_VIOLATION;
+//						lowConstraintViolations ++;
+//					}
+
+				}
+			}
+		}
+	}
+	private void checkCustomConstraints() {
+		String[] intermediate = this.getIntermediate();
+		for (CustomConstraint cp : customConstraints) {
+			if (!cp.mustAppear()) {
+				int found = 0;
+				for (String i : intermediate) {
+					//Matcher matcher = pattern.matcher(i);
+					Matcher matcher = cp.getPattern().matcher(i);
+					if (matcher.find()) {
+						found ++;
+					}
+				}
+
+				int p=1;
+				if (cp.getPriority() == ConstraintPriority.high) {
+					p = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION;
+					highConstraintViolations  = highConstraintViolations + found;
+				}
+				if (cp.getPriority() == ConstraintPriority.medium) {
+					p = ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION;
+					mediumConstraintViolations  = mediumConstraintViolations + found;
+				}
+				if (cp.getPriority() == ConstraintPriority.low) {
+					p = ProblemParameters.PENALTY_LOW_CONSTRAINT_VIOLATION;
+					lowConstraintViolations  = lowConstraintViolations + found;
+				}
+
+				fitness = fitness + (found *p);
+
+			}else {
+				boolean found = false;
+				for (String i : intermediate) {
+					Matcher matcher = cp.getPattern().matcher(i);
+					if (matcher.find()) {
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					int p=1;
+					if (cp.getPriority() == ConstraintPriority.high) {
+						p = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION;
+						highConstraintViolations ++;
+					}
+					if (cp.getPriority() == ConstraintPriority.medium) {
+						p = ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION;
+						mediumConstraintViolations ++;
+					}
+					if (cp.getPriority() == ConstraintPriority.low) {
+						p = ProblemParameters.PENALTY_LOW_CONSTRAINT_VIOLATION;
+						lowConstraintViolations ++;
+					}
+
+					fitness = fitness + p;
+				}
+			}
+		}
+	}
+	private void checkImbalance() {
+		for (int[][] p : participants) {
+			for (int d=0; d < 7; d++) {
+				for (Group g : Group.values()) {
+					if (p[d][g.ordinal()]>targets[g.ordinal()]) {
+						int over = p[d][g.ordinal()]-targets[g.ordinal()];
+						groupImbalanced=groupImbalanced+over;
+						fitness = fitness +(over *ProblemParameters.PENALTY_GROUP_IMBALANCE);
+					}
+				}
+			}
+		}
+	}
+
+	private boolean checkLate(Gene g) {
+		if (g.driver.getDuty(g.slot.getWeek())==1) {
+			return true;
+		}
+		return false;
+	}
+
+	public boolean checkExpiry(Gene g) {
+		int week = g.slot.getWeek();
+		if (g.driver.finalYear()) {
+			if(week >  g.driver.getExpiresWeek()) {
+				return true;
+			}
+		}
+		return false;
+
+	}
+
+	public void initParticipants() {
+		participants = new int[ProblemParameters.WEEKS][][];
+		for (int x=0;x < participants.length; x++ ) {
+			participants[x] = new int[7][];
+			for (int d=0; d < 7; d++) {
+				participants[x][d] = new int[Group.values().length];
+			}
+		}
+
+	}
+	public void init() {
+
+		modified = true;
+		initParticipants();
+		//Random init
+		free = new ArrayList<TrainingSlot>();
+		chromosome = new ArrayList<Gene>();
+
+		try {
+			free.addAll(SlotFactory.getSlotSet() ) ;
+
+			//Now create genes
+			for (Driver d : DriverFactory.getDriverList()) {
+				Gene g = new Gene();
+				g.driver = d;
+				g.slot = getRndUnalloc(d);
+				chromosome.add(g);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		intermediateBuffer = new String[chromosome.size()];
+	}
+
+	private TrainingSlot getRndUnalloc(Driver d) {
+		//Bias towards early shift & unexpired
+
+		int idx = rnd.nextInt(free.size());
+
+		for (int tries =0; tries <=150; tries++) {
+			TrainingSlot s = free.get(idx);
+			int week = s.getWeek();
+			if (d.finalYear()) {
+				if (week <= d.getExpiresWeek())
+					break;
+			}else {
+
+				int duty = d.getDuty(week);
+				if (duty==2) {
+					break;
+				}
+			}
+			idx = rnd.nextInt(free.size());
+		}
+		return free.remove(idx);
+	}
+
+	public void mutate() {
+		modified = true;
+		//mutate
+		if (rnd.nextBoolean()) {
+			//Sawp
+			Gene g1 = chromosome.get(rnd.nextInt(chromosome.size()));
+
+
+			//Bias towards slot issues
+			if (rnd.nextBoolean()) {
+				int t=0;
+				while ((g1.driver.getDuty(g1.slot.getWeek())==1) &&( t <11)){
+					g1 = chromosome.get(rnd.nextInt(chromosome.size()));
+					t++;
+				}
+			}
+
+			Gene g2 = chromosome.get(rnd.nextInt(chromosome.size()));
+			TrainingSlot tmp = g1.slot;
+			g1.slot = g2.slot;
+			g2.slot = tmp;
+		}else {
+			//Swap to unalloc
+			Gene g1 = chromosome.get(rnd.nextInt(chromosome.size()));
+			TrainingSlot tmp = free.remove(rnd.nextInt(free.size()));
+			free.add(g1.slot);
+			g1.slot = tmp;
+		}
+	}
+
+
+
+	public Individual(Individual p1, Individual p2) throws Exception {
+		initParticipants();
+		modified = true;
+		//Crossover constructor
+		free = new ArrayList<TrainingSlot>();
+		free.addAll(SlotFactory.getSlotSet()) ;
+		chromosome = new ArrayList<Gene>();
+
+		for (int count =0; count <  p1.chromosome.size(); count ++) {
+			Gene g  = new Gene();
+			Gene p1g = p1.chromosome.get(count);
+			Gene p2g = p2.chromosome.get(count);
+			g.driver = p1g.driver;
+			if (rnd.nextBoolean()) {
+				//Add p1
+				TrainingSlot s = p1g.slot;
+				if (free.contains(s)) {
+					g.slot = s;
+					free.remove(s);
+				}else {
+					s = p2g.slot;
+					if (free.contains(s)) {
+						g.slot = s;
+						free.remove(s);
+					}else {
+						s = free.remove(0);
+						g.slot=s;
+					}
+				}
+			}else{
+				//Add p2
+				TrainingSlot s = p2g.slot;
+				if (free.contains(s)) {
+					g.slot = s;
+					free.remove(s);
+				}else {
+					s = p1g.slot;
+					if (free.contains(s)) {
+						g.slot = s;
+						free.remove(s);
+					}else {
+						s = free.remove(0);
+						g.slot=s;
+					}
+				}
+			}
+			chromosome.add(g);
+		}
+		intermediateBuffer = new String[chromosome.size()];
+	}
+
+	public void printSummary() {
+		if (modified) {
+			this.fitness();
+		};
+		//...
+		System.out.println("CPC Plan");
+		System.out.println("Issues :");
+		System.out.println("CPC on lates shift: \t" +lates); 
+		System.out.println("License expired before training: \t"+expired);
+		System.out.println("Imbalanced group places: \t"+groupImbalanced);
+		System.out.println("Low Constraint violations: \t"+lowConstraintViolations);
+		System.out.println("Medium Constraint violations: \t"+mediumConstraintViolations);
+		System.out.println("High Constraint violations: \t"+highConstraintViolations);
+
+	}
+
+	public String findIntermediate(String[] intermediate, Gene g) {
+		String drvId = g.driver.getID();
+		for (String s : intermediate) {
+			if (s.contains(drvId))
+				return s;
+		}
+		return null;
+	}
+	public void printSol() {
+		
+		String[] intermediate = this.getIntermediate();
+		
+		System.out.println("Plan by week / day ");
+		System.out.println("Week , Day , Driver ID ,Group,Duty,Expiry Week, Final Year" );
+		//Print by week
+		for (int week =0; week < ProblemParameters.WEEKS; week++) {
+			for (int day =0; day < 7; day ++) {
+				for (Gene g : chromosome) {
+					if ((g.slot.getWeek() == week) && (g.slot.getDay()==day)) {
+
+						System.out.print(week + "," +day +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(week)+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear() );
+						if (this.checkExpiry(g))
+								System.out.println("\tLICENSE EXPIRED!");
+
+						if (this.checkLate(g))
+							System.out.println("\tON LATE DUTY!");
+						
+						String inter = findIntermediate(intermediate,g);
+						
+						//Now check custom constraints
+						this.checkCustomConstraints(g, inter);
+						
+//						System.out.println("\t"+inter);
+					}
+				}
+			}
+		}
+
+		
+		
+//		System.out.println("Plan by week / day ");
+//		System.out.println("Week , Day , Driver ID ,Group,Duty,Expiry Week, Final Year" );
+//		//Print by week
+//		for (int week =0; week < ProblemParameters.WEEKS; week++) {
+//			for (int day =0; day < 7; day ++) {
+//				for (Gene g : chromosome) {
+//					if ((g.slot.getWeek() == week) && (g.slot.getDay()==day)) {
+//
+//						System.out.print(week + "," +day +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(week)+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear() );
+//						if (g.driver.finalYear())
+//							if(g.driver.getExpiresWeek() < week)
+//								System.out.print(", LICENSE EXPIRED!");
+//
+//						if (g.driver.getDuty(week)==1)
+//							System.out.print(", ON LATE DUTY!");
+//						System.out.println();
+//					}
+//				}
+//			}
+//		}
+//
+//		System.out.println("Additional constraints:");
+//		String[] intermediate = this.getIntermediate();
+//
+//		for (CustomConstraint cp: customConstraints) {
+//			//Pattern pattern = Pattern.compile(cp.getRegex(), Pattern.CASE_INSENSITIVE);
+//			System.out.print("'"+cp.getSource());
+//			if (cp.mustAppear()) {
+//				boolean found = false;
+//				for (String i : intermediate) {
+//					Matcher matcher = cp.getPattern().matcher(i);
+//					if (matcher.find()) 
+//						found = true;
+//				}
+//				if (found) 
+//					System.out.println( "' has been met." );
+//				else
+//					System.out.println( "' has not been met." );
+//			}else {
+//				boolean found = false;
+//				for (String i : intermediate) {
+//					Matcher matcher = cp.getPattern().matcher(i);
+//					if (matcher.find()) 
+//						found = true;
+//				}
+//
+//				if (!found) 
+//					System.out.println("' has been met." );
+//				else
+//					System.out.println("' has not been met." );
+//
+//				
+//			}
+//
+//		}
+	}
+
+	private String[] intermediateBuffer;
+
+	public String[] getIntermediate() {
+		//Print by week
+		int c=0;
+		for (Gene g : chromosome) {
+			String w =""+ g.slot.getWeek();
+			if (w.length()<2) w ="0"+w;
+
+			String xw = ""+g.driver.getExpiresWeek();
+			if (xw.length()<2) xw ="0"+xw;
+			int fy=0;
+			if (g.driver.finalYear()) fy=1;
+
+			//intermediateBuffer[c] =  (":WK:"+w + ":DY:" +g.slot.getDay() +":ID:" + g.driver.getID() +":GR:" +g.driver.group().name() + ":DT:" +g.driver.getDuty(g.slot.getWeek())+":XW:"+xw + ":FY:"+fy );	
+			intermediateBuffer[c] =  (
+					":ID:" + g.driver.getID() +
+					":GR:" +g.driver.group().name() + 
+					":WK:"+w + 
+					":DY:" +g.slot.getDay() +
+					":DT:" +g.driver.getDuty(g.slot.getWeek())+
+					":XW:"+xw + 
+					":FY:"+fy );	
+
+			c++;
+		}
+		//		String buffer = "";
+		//		for (String s : intermediateBuffer) {
+		//			//			buffer = buffer + s;
+		//		}
+		return intermediateBuffer;
+	}
+
+
+	public Individual (Individual other) {
+		initParticipants();
+		//Copy constructor
+		this.chromosome = new ArrayList<Gene>();
+		for (Gene og : other.chromosome) {
+			Gene ng = new Gene();
+			ng.driver = og.driver;
+			ng.slot = og.slot;
+			this.chromosome.add(ng);
+		}
+
+		this.free = new ArrayList<TrainingSlot>();
+		for (TrainingSlot s : other.free)
+			this.free.add(s);
+
+		modified = true;
+		intermediateBuffer = new String[chromosome.size()];
+	}
+
+	private void verify() throws Exception {
+		/* Verify that the chromsome contains a valid solution */
+		ArrayList<TrainingSlot> slots = SlotFactory.getSlotSet();
+
+
+		for (Gene g : chromosome) {
+			if (g.driver == null)
+				throw new Exception("Null driver in gene");
+
+			if (g.slot == null)
+				throw new Exception("Null slot in gene");
+
+
+			if (slots.contains(g.slot)) {
+				slots.remove(slots.indexOf(g.slot));
+			}else {
+				throw new Exception("Duplicated slot ");
+			}
+		}
+
+		for (TrainingSlot s : free) {
+			if (slots.contains(s)) {
+				slots.remove(slots.indexOf(s));
+			}else {
+				throw new Exception("Duplicate unallocated slot");
+			}
+		}
+		if (slots.size() !=0) {
+			throw new Exception("Extra slots left");
+		}
+	}
+	public String stats() {
+		return  "fit," +fitness +",lates,"+lates +",expired,"+expired +",imbalance,"+groupImbalanced +",low," +lowConstraintViolations +",med," +mediumConstraintViolations+",high," +highConstraintViolations;
+	}
+}

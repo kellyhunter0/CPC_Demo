@@ -1,0 +1,97 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Random;
+
+public class DriverFactory {
+	private static ArrayList<Driver> drivers;
+	private static int id;
+	private static Random r = null;//Seeded rng
+
+
+	public static ArrayList<Driver> getDriverList(){
+		if (drivers ==null)
+			initialise();
+
+		return drivers;
+	}
+
+	private static void initialise() {
+		if (ProblemParameters.DATASET_FILE.length() > 0){
+			initialiseFile(ProblemParameters.DATASET_FILE);
+		}else
+			initialiseSeed(ProblemParameters.DATASET_SEED);
+	}
+
+	private static void initialiseSeed(int seed) {
+		r = new Random(seed);
+		//Create a random list of  drivers
+		drivers = new ArrayList<Driver>();
+		int id=0;
+		newDrivers(50, Group.OFF);
+		newDrivers(24, Group.LMC);
+		newDrivers(750, Group.CEN);
+		newDrivers(400, Group.MAR);
+		newDrivers(450, Group.LON);
+		newDrivers(140, Group.LCB);
+		newDrivers(140, Group.ECB);
+		newDrivers(60, Group.EBT);
+
+	}
+
+	private static void initialiseFile(String fileName) {
+		drivers = new ArrayList<Driver>();
+		try {
+		BufferedReader br = new BufferedReader(new FileReader(fileName));
+		String line;
+		while ((line = br.readLine()) != null) {
+			Driver d = new Driver(line);
+			System.out.println(line);
+			drivers.add(d);
+		}
+		}catch(IOException e) {
+			System.out.println("Error reading inpout file "+e.getMessage());
+			System.exit(-1);
+		}
+
+
+	}
+
+	public static void toCSV() {
+		if (drivers ==null)
+			initialise();
+
+		System.out.println(ProblemParameters.CSV_HEADER);
+		for (Driver d : drivers) {
+			System.out.println(d.toCSV());
+		}
+	}
+	private static void newDrivers(int q, Group g) {
+		for (int x=0; x < q; x++) {
+			int week = r.nextInt(ProblemParameters.WEEKS-1)+1;
+			int[] duties = new int[ProblemParameters.WEEKS];
+			for (int d =0; d <duties.length; d++)
+				duties[d] = r.nextInt(2)+1; //1-2
+
+			boolean finalyear= false;
+			if (r.nextInt(5)==0)
+				finalyear = true;
+
+			try {
+				Driver d = new Driver(""+id,/*ID*/
+						week, /*Expiry week*/
+						finalyear,/*True if license expires this year */
+						g,/*staff group */
+						duties
+						);
+				drivers.add(d);
+				//				System.out.println(d);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			id++;
+		}
+	}
+}

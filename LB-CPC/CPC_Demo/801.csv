@@ -1,0 +1,11 @@
+DataSet,801,Constraints,100,run,0,fit,3910,lates,14,expired,0,imbalance,270,low,15,med,9,high,243,Evals,250000
+DataSet,801,Constraints,100,run,1,fit,3963,lates,23,expired,0,imbalance,267,low,13,med,10,high,245,Evals,250000
+DataSet,801,Constraints,100,run,2,fit,3948,lates,23,expired,0,imbalance,266,low,13,med,10,high,244,Evals,250000
+DataSet,801,Constraints,100,run,3,fit,3978,lates,20,expired,0,imbalance,268,low,13,med,11,high,247,Evals,250000
+DataSet,801,Constraints,100,run,4,fit,4003,lates,23,expired,0,imbalance,259,low,13,med,10,high,253,Evals,250000
+DataSet,801,Constraints,100,run,5,fit,3934,lates,23,expired,0,imbalance,271,low,14,med,8,high,241,Evals,250000
+DataSet,801,Constraints,100,run,6,fit,3938,lates,18,expired,0,imbalance,267,low,13,med,10,high,245,Evals,250000
+DataSet,801,Constraints,100,run,7,fit,3932,lates,15,expired,1,imbalance,266,low,12,med,10,high,245,Evals,250000
+DataSet,801,Constraints,100,run,8,fit,3933,lates,18,expired,1,imbalance,274,low,13,med,9,high,240,Evals,250000
+DataSet,801,Constraints,100,run,9,fit,3942,lates,18,expired,0,imbalance,266,low,12,med,10,high,246,Evals,250000
+DataSet,801,Constraints,250,run,0,fit,300,lates,14,expired,0,imbalance,0,low,30,med,16,high,12,Evals,241617

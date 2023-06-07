@@ -1,0 +1,40 @@
+
+public class ProblemParameters {
+	/*
+	 * A static data structure of problem parameters
+	 */
+	
+	public static int TRAINING_PLACES = 12;
+	//No of places per training day
+	
+	public static int  WEEKS =40;
+	//40 weeks 0-39 per training year
+	
+	public static boolean WEEKDAYS_ONLY = true;
+	//Only use days 1,2,3,4,5
+	
+	//Fitness function penalties
+	public static int PENALTY_LATE_SHIFT = 5;//1
+	public static int PENALTY_EXPIRED_LICENSE=15;//10;
+	public static int PENALTY_GROUP_IMBALANCE =5;
+	public static int PENALTY_ADVANCE_FINAL_WEEK =5;
+	public static int PENALTY_LOW_CONSTRAINT_VIOLATION =1;
+	public static int PENALTY_MEDIUM_CONSTRAINT_VIOLATION =5;
+	public static int PENALTY_HIGH_CONSTRAINT_VIOLATION =10;
+	
+	//CSV
+	public static String CSV_HEADER = "Driver,Group,Duties,Final Year, Expires Week,Training Week, Training Day";
+	
+	//EA Parameters
+	public static int POP_SIZE =100;//200
+	public static int TIME_OUT=25000;
+	public static int MAX_EVALS=250000;
+	
+	
+	//Parameters set from commandLine
+	public static int DATASET_SEED;
+	public static int CUSTOMCONSTRAINTS;
+	
+	//Eavals counter
+	public static int EVALS=0;
+}

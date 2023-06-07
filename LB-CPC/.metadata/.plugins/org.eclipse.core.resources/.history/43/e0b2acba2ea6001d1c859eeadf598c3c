@@ -1,0 +1,51 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+
+public class ApplicationTime {
+
+	public static void main(String[] args) {
+		try {
+			
+			int[] constraints = {0,10,25,50,100};
+			int[] seeds = {135,480,665,801};
+
+			ProblemParameters.MAX_EVALS = 2000;
+			for (int s : seeds) {
+				ProblemParameters.DATASET_SEED = s;
+				for (int c : constraints) {
+					ProblemParameters.CUSTOMCONSTRAINTS=c;
+					Individual.setConstraints(RandomBasil.getBasil());
+					GA.run(false,10);
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static ArrayList<String> readConstraints() {
+
+		ArrayList<String> res = new ArrayList<String>();
+		String fileName = "./constraints.txt";
+
+
+		try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				res.add(line);
+
+
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return res;
+
+	}
+}
