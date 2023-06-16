@@ -56,93 +56,90 @@ import java.util.regex.Matcher;
 
 public class BRD {
 	private static Random rnd = new Random();
-	// Drivers who are happy with met constraints that can swap - this will be in the case of drivers who have constraints met but these are lower priority, and the swap could mean that a high priority constraint is met
-	private ArrayList<String> metConstraints;
-	// Drivers who have no constraints set and are open to swap
-	private ArrayList<String> openToSwap;
-	// drivers who have constraint violations
-	private ArrayList<String> violations;
-	private boolean isFound;
 
-	public BRD() {
-		violations = new ArrayList<String>();
-		metConstraints = new ArrayList<String>();
-		openToSwap = new ArrayList<String>();
-		isFound = false;
-	}
-	
-	
-	public BRD(ArrayList<String> metConstraints, ArrayList<String> openToSwap, ArrayList<String> violations) {
-		this.violations = violations;
-		this.openToSwap = openToSwap;
-		this.metConstraints = metConstraints;
-		isFound = false;
-		
-		if(violations.size() == 0) 
-			violations = new ArrayList<String>();
-		
-		if(openToSwap.size() == 0) 
-			openToSwap = new ArrayList<String>();
-		
-		if(metConstraints.size() == 0) 
-			openToSwap = new ArrayList<String>();
-		
-	}
 	/*
 	 * This function will run Best Response Dynamics, also known as Better Response Dynamics, as a means of comparison to the GA
 	 */
-	private static void runBRD(boolean verbose, int runs) throws Exception {
+	public static void runBRD(boolean verbose, int runs) throws Exception {
 		for(int run = 0; run < runs; run++) {
 			ProblemParameters.EVALS = 0;
 			Player[] population = new Player[ProblemParameters.POP_SIZE];
-			int bestFit = Integer.MAX_VALUE;
-			Individual best =null;
+			int utility = Integer.MAX_VALUE;
+			Player best =null;
 			
+			//System.out.println("Run " + run);
+			for (int x=0; x < population.length; x++) {
+				population[x] = new Player();
+				if (population[x].calculateUtility()<utility) {
+					utility = population[x].calculateUtility();
+					best = population[x];
+					//				System.out.println("Best =" + bestFit);
+				}
+			}
+			
+			int nOperations = 0;
+			int left = ProblemParameters.TIME_OUT;
+			if(verbose) {
+				System.out.println(nOperations + ",left,"+left+"," +best.stats()); // gen is the count
+			}
+			if ((nOperations%1000 ==0)&&(verbose))
+				System.out.println(nOperations + ",left,"+left+"," +best.stats());
 			
 		}
 	}
 	
-	// These set of methods show the getters and setters for group and driver violations. These are stored in ArrayLists, which store the driver number, group name, and the week they specified along with the priority
-	// T
-	public ArrayList<String> getViolations() {
-		return violations;
-	}    
-	public ArrayList<String> setViolations(ArrayList<String> violations) {
-		this.violations = violations;
-		return violations;
-	}
+
+	private void improveSol(Player[] pop, ArrayList<TrainingSlot> solution)  {
+		//DriverFactory df = new DriverFactory();
+		int p1 = rnd.nextInt(pop.length);
+		int p2 = rnd.nextInt(pop.length);
+		//df.getDriverList(); 
+		
+		// need to compare custom constraint priority for each individual, and if one ranks higher than the other, then the slot is allocated to the higher priority case
+		for(String unhappy : pop[p1].getViolations() ) {
+			for(String free : pop[p2].getOpenToSwap()) {
+				String unhappyPerson[] = unhappy.split(",");
+				String weekPreference = unhappyPerson[2];
+				
+				String openToSwapWeek[] = free.split(",");
+				String swapWeek = openToSwapWeek[0];
+				if(swapWeek.contains(weekPreference) && free.contains("must be after")) {
+					// potential swap after one week!
+				} else if (swapWeek.contains(weekPreference) && free.contains("must be before")) {
+					// allocate
+				} else if (swapWeek.contains(weekPreference) && free.contains("must be in")) {
+					// allocate
+				}
+				else if (swapWeek.contains(weekPreference) && free.contains("must not be in")) {
+					// allocate
+				}
+				
+				//String week = Integer.toString(w);
+				int game = game(pop);
+				
+				if(pop[game].calculateUtility() > pop[p2].calculateUtility() ) {
+					//if(!solution.contains(t) && pop[p1].getIntermediate().toString().contains(week)) {
+						
+						//allocated
+					}
+					else {
+						
+					}
+				}
+			}
+			
+		}
 	
-	public ArrayList<String> addViolations(String violation) {
-		violations.add(violation);
-		return violations;
-	}
-// Happy people to  swap with
-	// people who have met constraints
-	public ArrayList<String> getMetConstraints() {
-		return metConstraints;
-	}    
-	public ArrayList<String> setMetConstraints(ArrayList<String> metConstraints) {
-		this.metConstraints = metConstraints;
-		return metConstraints;
-	}    
-	public ArrayList<String> addMetConstraints(String constraint) {
-		metConstraints.add(constraint);
-		return metConstraints;
-	}
-	// people who have no constraints and are happy to swap
-	public ArrayList<String> getOpenToSwap() {
-		return openToSwap;
-	}    
-	public ArrayList<String> setOpenToSwap(ArrayList<String> openToSwap) {
-		this.openToSwap = openToSwap;
-		return openToSwap;
-	}
 	
-	public ArrayList<String> addOpenToSwap(String swap) {
-		openToSwap.add(swap);
-		return openToSwap;
+	private static int game(Player[] pop) {
+		int p1 = rnd.nextInt(pop.length);
+		int p2 = rnd.nextInt(pop.length);
+		if(pop[p1].calculateUtility() > pop[p2].calculateUtility()) 
+			return p1;
+		else
+			return p2;
+				
 	}
-	
 	
 
 	

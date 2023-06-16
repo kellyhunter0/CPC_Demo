@@ -16,6 +16,9 @@ public class Player {
 	private String[][][][][][]players;
 	private int payoff;
 	private static Random rnd;
+	private int highSwapCount;
+	private int lowHighCount;
+	private int mediumSwapCount;
 	
 	
 	public Player() {
@@ -23,6 +26,7 @@ public class Player {
 		metConstraints = new ArrayList<String>();
 		openToSwap = new ArrayList<String>();
 		payoff = 0;
+		strategy = strategy.SWAP_FREE; // default
 		//int id = Integer.parseInt(g.driver.getID());
 		//players[g.slot.getWeek()][g.slot.getDay()][id][g.driver.group().ordinal()][cp.getPriority().ordinal()][this.getStrategy().ordinal()].toString();
 		players = new String[ProblemParameters.WEEKS][][][][][];
@@ -95,15 +99,18 @@ public class Player {
 	public int calculateUtility() {
 		// p1 gets higher payoff
 		if(strategy.name() == "SWAP_HIGH" && strategy.name() == "SWAP_FREE") {
+			highSwapCount++;
 			payoff = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION; // payoff is 10
 			return payoff;
 			
 		}
 		else if(strategy.name() == "SWAP_HIGH" && strategy.name() == "SWAP_LOW") {
+			lowHighCount++;
 			payoff = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION - ProblemParameters.PENALTY_LOW_CONSTRAINT_VIOLATION; // payoff is 10-1 = 9
 			return payoff;
 		}
 		else if(strategy.name() == "SWAP_MEDIUM" && strategy.name() == "SWAP_FREE") {
+			mediumSwapCount++;
 			payoff = ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION; // payoff is 5
 			return payoff;
 			
@@ -112,52 +119,8 @@ public class Player {
 		return payoff;
 	
 	}
-	private void improveSol(Player[] pop, ArrayList<TrainingSlot> solution)  {
-		//DriverFactory df = new DriverFactory();
-		int p1 = rnd.nextInt(pop.length);
-		int p2 = rnd.nextInt(pop.length);
-		//df.getDriverList(); 
-		
-		// need to compare custom constraint priority for each individual, and if one ranks higher than the other, then the slot is allocated to the higher priority case
-		for(String unhappy : getViolations() ) {
-			for(String free : getOpenToSwap()) {
-				String unhappyPerson[] = unhappy.split(",");
-				String weekPreference = unhappyPerson[2];
-				if(free.contains(weekPreference) && free.contains("must be after")) {
-					// potential swap after one week!
-				} else if (free.contains(weekPreference) && free.contains("must be before")) {
-					
-				} else if (free.contains(weekPreference) && free.contains("must be in")) {
-					
-				}
-				else if (free.contains(weekPreference) && free.contains("must not be in")) {
-					
-				}
-				
-				//String week = Integer.toString(w);
-				//int game = game(pop);
-				
-				if(pop[p1].calculateUtility() > pop[p2].calculateUtility() ) {
-					//if(!solution.contains(t) && pop[p1].getIntermediate().toString().contains(week)) {
-						
-						//allocated
-					}
-					else {
-						
-					}
-				}
-			}
-			
-		}
 	
-	
-	private static int game(Player[] pop) {
-		int p1 = rnd.nextInt(pop.length);
-		int p2 = rnd.nextInt(pop.length);
-		if(pop[p1].calculateUtility() < pop[p2].calculateUtility()) 
-			return p1;
-		else
-			return p2;
-				
+	public String stats() {
+		return  "utility," +payoff +",highSwapCount,"+highSwapCount +",lowHighCount,"+lowHighCount +",mediumSwapCount,"+mediumSwapCount ;
 	}
 }

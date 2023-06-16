@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Application {
 
@@ -27,10 +28,39 @@ public class Application {
 
 				Individual.setConstraints(RandomBasil.getBasil());
 				//DriverFactory.setSeed();
-				GA.run(true,1);
+				
+				System.out.println("Command Options: ");
+				System.out.println("1: Run GA");
+				System.out.println("2: Run BRD");
+				System.out.println("?: Display");
+				System.out.println("0: Quit");
+				try (Scanner scan = new Scanner(System.in)) 
+				{
+					String choice = scan.nextLine();
+					do {
+					switch (choice){
+					    case "1":
+					    	GA.run(true,1);
+					        break;
+					    case "2":
+					    	BRD.runBRD(true, 1);
+					        break;
+					  
+					    case "?":
+					            System.out.println("Command Options: ");
+								System.out.println("1: Run GA");
+								System.out.println("2: Run BRD");
+								System.out.println("?: Display");
+								System.out.println("0: Quit");
+					            break;
+					        }  }while (!choice.equals("0"));
+					}
+
+				}
 				
 				
-			}
+				
+			
 
 		} catch (Exception e) {
 			e.printStackTrace();
