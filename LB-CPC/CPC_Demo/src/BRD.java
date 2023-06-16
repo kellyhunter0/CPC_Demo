@@ -48,23 +48,53 @@ import java.util.Random;
  *  
  *  Each driver wishes to minimise their cost, and in the context of this problem specifically:
  *  	- Drivers wish to minimise the number of high priority 
- *  	  constraints that are broken in the solution set provided by the GA. 
+ *  	  constraints that are broken in the solution set provided by the GA. The goal is to have a swap strategy based on priority, high constraint violations should be reduced, and any other parts should be fixed if possible
  *  The associated cost of broken constraints based on their priority rating can be found in the ProblemParameters.java file
  */
+import java.util.regex.Matcher;
 
 
 public class BRD {
 	private static Random rnd = new Random();
-	private static ArrayList<Driver> drivers;
+	// Drivers who are happy with met constraints that can swap - this will be in the case of drivers who have constraints met but these are lower priority, and the swap could mean that a high priority constraint is met
+	private ArrayList<String> metConstraints;
+	// Drivers who have no constraints set and are open to swap
+	private ArrayList<String> openToSwap;
+	// drivers who have constraint violations
+	private ArrayList<String> violations;
+	private boolean isFound;
+
+	public BRD() {
+		violations = new ArrayList<String>();
+		metConstraints = new ArrayList<String>();
+		openToSwap = new ArrayList<String>();
+		isFound = false;
+	}
 	
 	
+	public BRD(ArrayList<String> metConstraints, ArrayList<String> openToSwap, ArrayList<String> violations) {
+		this.violations = violations;
+		this.openToSwap = openToSwap;
+		this.metConstraints = metConstraints;
+		isFound = false;
+		
+		if(violations.size() == 0) 
+			violations = new ArrayList<String>();
+		
+		if(openToSwap.size() == 0) 
+			openToSwap = new ArrayList<String>();
+		
+		if(metConstraints.size() == 0) 
+			openToSwap = new ArrayList<String>();
+		
+	}
 	/*
 	 * This function will run Best Response Dynamics, also known as Better Response Dynamics, as a means of comparison to the GA
 	 */
 	private static void runBRD(boolean verbose, int runs) throws Exception {
 		for(int run = 0; run < runs; run++) {
 			ProblemParameters.EVALS = 0;
-			Individual[] population = new Individual[ProblemParameters.POP_SIZE];
+			Player[] population = new Player[ProblemParameters.POP_SIZE];
 			int bestFit = Integer.MAX_VALUE;
 			Individual best =null;
 			
@@ -72,55 +102,56 @@ public class BRD {
 		}
 	}
 	
-	private static ArrayList<Driver> getDriverSchedule() {
-		return drivers;
+	// These set of methods show the getters and setters for group and driver violations. These are stored in ArrayLists, which store the driver number, group name, and the week they specified along with the priority
+	// T
+	public ArrayList<String> getViolations() {
+		return violations;
+	}    
+	public ArrayList<String> setViolations(ArrayList<String> violations) {
+		this.violations = violations;
+		return violations;
 	}
-	private static ArrayList<Driver> setDriverSchedule(ArrayList<Driver> drivers) {
-		return drivers;
+	
+	public ArrayList<String> addViolations(String violation) {
+		violations.add(violation);
+		return violations;
 	}
+// Happy people to  swap with
+	// people who have met constraints
+	public ArrayList<String> getMetConstraints() {
+		return metConstraints;
+	}    
+	public ArrayList<String> setMetConstraints(ArrayList<String> metConstraints) {
+		this.metConstraints = metConstraints;
+		return metConstraints;
+	}    
+	public ArrayList<String> addMetConstraints(String constraint) {
+		metConstraints.add(constraint);
+		return metConstraints;
+	}
+	// people who have no constraints and are happy to swap
+	public ArrayList<String> getOpenToSwap() {
+		return openToSwap;
+	}    
+	public ArrayList<String> setOpenToSwap(ArrayList<String> openToSwap) {
+		this.openToSwap = openToSwap;
+		return openToSwap;
+	}
+	
+	public ArrayList<String> addOpenToSwap(String swap) {
+		openToSwap.add(swap);
+		return openToSwap;
+	}
+	
+	
+
+	
+	// Set of methods 
 	
 	/*
 	 * This function hopes to improve the output generated from the GA, and will fix solutions with broken constraints based on priority
 	 */
-	private static void improveSol(Individual[] pop, ArrayList<TrainingSlot> solution)  {
-		//DriverFactory df = new DriverFactory();
-		int p1 = rnd.nextInt(pop.length);
-		int p2 = rnd.nextInt(pop.length);
-		//df.getDriverList(); 
-		
-		// need to compare custom constraint priority for each individual, and if one ranks higher than the other, then the slot is allocated to the higher priority case
-		for(Individual p : pop) {
-			for(TrainingSlot t : solution) {
-				int d = t.getDay();
-				int w = t.getWeek();
-				int n = t.getNo();
-				
-				String week = Integer.toString(w);
-				int game = game(pop);
-				
-				if(pop[p1].fitness() > pop[p2].fitness() && !solution.contains(t)) {
-					if(!solution.contains(t) && pop[p1].getIntermediate().toString().contains(week)) {
-						
-						//allocated
-					}
-					else {
-						
-					}
-				}
-			}
-			
-		}
-	}
-	
-	private static int game(Individual[] pop) {
-		int p1 = rnd.nextInt(pop.length);
-		int p2 = rnd.nextInt(pop.length);
-		if(pop[p1].fitness() < pop[p2].fitness()) 
-			return p1;
-		else
-			return p2;
-				
-	}
+
 	
 	private boolean freeSlot(ArrayList<TrainingSlot> solution, TrainingSlot t) {
 	
@@ -135,6 +166,7 @@ public class BRD {
 		// allocate slot to a person in the population
 		// check priority and prioritise high constraints that have been broken, 
 		//as well as fix other schedules that are 'broken'
+		// Could use the gale shapely algorithm to allocate: https://www.sanfoundry.com/java-program-gale-shapley-algorithm/
 	}
 	
 	/*

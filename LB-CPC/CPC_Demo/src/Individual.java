@@ -23,7 +23,9 @@ public class Individual {
 
 	private int[][][]participants = new int[ProblemParameters.WEEKS][][];
 	private static ArrayList<CustomConstraint> customConstraints;
-
+	//private BRD brd = new BRD();
+	private Player player = new Player();
+	
 
 	private static int[] targets=null;//Targets from each group
 
@@ -93,6 +95,7 @@ public class Individual {
 	}
 	public Individual() { // O(g * d), where g is the number of groups, and d is the number of drivers
 		init();
+
 		if (targets==null) {
 			int tDrivers = DriverFactory.getDriverList().size();
 			targets = new int[Group.values().length];
@@ -166,44 +169,96 @@ public class Individual {
 	}
 	
 	private void checkCustomConstraints(Gene g, String intermediate) {
+		
+		String arrayListSource = "";
+		boolean isFound = false;
+		boolean violation = false;
+		
 		for (CustomConstraint cp : customConstraints) {
-			if (!cp.mustAppear()) {
-				int found = 0;
+			
+			String[] res =  intermediate.split(":");
+			String driver = res[2]; // driver ID
+			String group = res[4]; // group name
+
+
+				//int found = 0;
+				//player.addOpenToSwap(g.slot.getWeek() + "," +g.slot.getDay() +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(g.slot.getWeek())+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear());
+				//System.out.println("\t No clash"+ ","+ g.slot.getWeek() + "," +g.slot.getDay() +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(g.slot.getWeek())+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear());
+				//System.out.println(driver + " "+ group + " " + cp.getSource());
+				String[] temp = cp.getSource().split(" ");
+				
+				
+					
 					//Matcher matcher = pattern.matcher(i);
 					Matcher matcher = cp.getPattern().matcher(intermediate);
 					if (matcher.find()) {
-						found ++;
+						arrayListSource = "Found " + g.driver.getID() + "," + g.driver.group().name() + "," + cp.getSource();
+						System.out.println("\t\t Found " + arrayListSource );
+						player.addMetConstraints(arrayListSource);
+						isFound = true;
+						violation = false;
 					}
-				
-
-				int p=1;
-				if (found > 0)
-					System.out.println("\t Violation " + cp.getSource() );
-
-			}else {
-				//["", ID, 100, GR, LMC,..]
-				//[0,  1,   2,   3,  4,...]
-				// the below  variables split the intermediate regex string and focus on driver ID and group name to see if these match the constraint
-					String[] res =  intermediate.split(":");
-					String driver = res[2]; // driver ID
-					String group = res[4]; // group name
-					Matcher matcher = cp.getPattern().matcher(intermediate);
-					
-					
-					if (matcher.find()) {
-						System.out.println("\t\t Found " + cp.getSource() );
-					}
+			
 					else {
-						//System.out.println("Violations: " + cp.getSource() );
-						if( cp.getSource().contains(group)) // group only violations
-							System.out.println("\t Group Violation " + cp.getSource());
-						 else if ((cp.getSource().contains(driver) && !cp.getSource().contains(group))) // driver id and group doesn't match, this shows driver only violations
-							System.out.println("\t Driver Violation " + cp.getSource());
-						
+						if( cp.getSource().contains(g.driver.group().name())&& !cp.getSource().contains(g.driver.getID())) { // group only violations 
+							arrayListSource = "" + g.driver.getID() + "," + g.driver.group().name() + "," + cp.getSource();
+							//violations.add(arrayListSource);
+							player.addViolations(arrayListSource);
+							System.out.println("\t Group Violation " + g.driver.getID() +" "+ g.driver.group().name() + cp.getSource());
+							isFound = false;
+							violation = true;
+						}
+						else if ((cp.getSource().contains(g.driver.getID()) && !cp.getSource().contains(g.driver.group().name()))) {
+							arrayListSource = "" + g.driver.getID() + "," + g.driver.group().name() + "," + cp.getSource();
+							//violations.add(arrayListSource);
+							player.addViolations(arrayListSource);
+							System.out.println("\t Driver Violation " +  g.driver.getID() + " " + g.driver.group().name() + cp.getSource());
+							violation = true;
+							isFound = false;
+						}
+						if(group.equals(temp[1]) && !driver.equals(temp[1])) {
+							System.out.println("\t No driver clash"+ ","+ g.slot.getWeek() + "," +
+												g.slot.getDay() +"," + g.driver.getID() +"," +
+												g.driver.group().name() + "," +g.driver.getDuty(g.slot.getWeek())+
+												","+g.driver.getExpiresWeek() + ","+g.driver.finalYear());
+						}
+						else if (!group.equals(temp[1]) && driver.equals(temp[1])) {
+							System.out.println("\t No group clash"+ ","+ g.slot.getWeek() + "," +
+												g.slot.getDay() +"," + g.driver.getID() +"," +
+												g.driver.group().name() + "," +g.driver.getDuty(g.slot.getWeek())+
+												","+g.driver.getExpiresWeek() + ","+g.driver.finalYear());
+						}
 					}
 				}
+				if(isFound == false  && violation == false) {
+					player.addOpenToSwap(g.slot.getWeek() + "," +g.slot.getDay() +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(g.slot.getWeek())+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear());
+					System.out.println("\t No clash"+ ","+ g.slot.getWeek() + "," +g.slot.getDay() +"," +
+										g.driver.getID() +"," +g.driver.group().name() + "," +
+										g.driver.getDuty(g.slot.getWeek())+","+
+										g.driver.getExpiresWeek() + ","+g.driver.finalYear());
+				//System.out.println(driver + " "+ group + " " + cp.getSource());
 			}
-		}
+
+
+			}
+				
+
+				
+
+
+			
+
+
+//
+//		for(String test : player.getDriverViolations()) {
+//			System.out.println("driver-test: " + test);
+//		}
+//		for(String test : player.getGroupViolations()) {
+//			System.out.println("group-test: " + test);
+//		}
+		
+
+		
 	
 	private void checkCustomConstraints() {
 		String[] intermediate = this.getIntermediate();
@@ -461,17 +516,16 @@ public class Individual {
 		return null;
 	}
 	public void printSol() {
-		
+		//found = false;
 		String[] intermediate = this.getIntermediate();
-		
 		System.out.println("Plan by week / day ");
-		System.out.println("Week , Day , Driver ID ,Group,Duty,Expiry Week, Final Year" );
+		System.out.println("Week, Day, Driver ID, Group, Duty, Expiry Week, Final Year" );
 		//Print by week
 		for (int week =0; week < ProblemParameters.WEEKS; week++) {
 			for (int day =0; day < 7; day ++) {
 				for (Gene g : chromosome) {
 					if ((g.slot.getWeek() == week) && (g.slot.getDay()==day)) {
-
+						
 						System.out.print(week + "," +day +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(week)+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear() );
 						if (this.checkExpiry(g))
 								System.out.print("\tLICENSE EXPIRED!");
@@ -481,23 +535,35 @@ public class Individual {
 						
 						System.out.println();
 						String inter = findIntermediate(intermediate,g);
-						
+
+
 						//Now check custom constraints
 						this.checkCustomConstraints(g, inter);
-						
-//						System.out.println("\t"+inter);
-						// BRD
-
-							
-						
-					}
+					 }
 				}
 			}
 		}
-		for(CustomConstraint cp : customConstraints) {
-			System.out.println("Violations: " + cp.getSource() );
-		}
+
 		
+		// Initial list of constraints set
+		for(CustomConstraint cp : customConstraints) {
+			System.out.println("Custom Constraint: " + cp.getSource() );
+
+		}
+
+	for(String a : player.getOpenToSwap()) {
+		System.out.println("open to swap:" + a);
+	}
+
+	// drivers and groups with met constraints. 
+		// TODO: ensure all drivers in each group have met constraints, the solution currently meets constraints for some and violates for others when group constraints are set.
+		for(String driver : player.getMetConstraints()) {
+			System.out.println("Drivers and groups with met constraints: " + driver);
+		}
+		// violations for each driver and group
+		for(String group : player.getViolations()) {
+			System.out.println("Violations: " + group);
+		}
 		
 //		System.out.println("Plan by week / day ");
 //		System.out.println("Week , Day , Driver ID ,Group,Duty,Expiry Week, Final Year" );

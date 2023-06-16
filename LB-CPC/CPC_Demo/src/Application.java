@@ -29,6 +29,7 @@ public class Application {
 				//DriverFactory.setSeed();
 				GA.run(true,1);
 				
+				
 			}
 
 		} catch (Exception e) {
