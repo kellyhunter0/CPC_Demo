@@ -56,7 +56,9 @@ import java.util.regex.Matcher;
 
 public class BRD {
 	private static Random rnd = new Random();
-
+//	private ArrayList<Gene> chromosome;
+//	private ArrayList<TrainingSlot> free;
+//	private Player[] pop;
 	/*
 	 * This function will run Best Response Dynamics, also known as Better Response Dynamics, as a means of comparison to the GA
 	 */
@@ -65,14 +67,14 @@ public class BRD {
 			ProblemParameters.EVALS = 0;
 			Player[] population = new Player[ProblemParameters.POP_SIZE];
 			int utility = Integer.MAX_VALUE;
-			Player best =null;
+			Player bestResponse =null;
 			
 			//System.out.println("Run " + run);
 			for (int x=0; x < population.length; x++) {
 				population[x] = new Player();
-				if (population[x].calculateUtility()<utility) {
+				if (population[x].calculateUtility()>utility) {
 					utility = population[x].calculateUtility();
-					best = population[x];
+					bestResponse = population[x];
 					//				System.out.println("Best =" + bestFit);
 				}
 			}
@@ -80,55 +82,85 @@ public class BRD {
 			int nOperations = 0;
 			int left = ProblemParameters.TIME_OUT;
 			if(verbose) {
-				System.out.println(nOperations + ",left,"+left+"," +best.stats()); // gen is the count
+				System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats()); // gen is the count
 			}
+			
 			if ((nOperations%1000 ==0)&&(verbose))
-				System.out.println(nOperations + ",left,"+left+"," +best.stats());
+				System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats());
 			
 		}
 	}
 	
-
-	private void improveSol(Player[] pop, ArrayList<TrainingSlot> solution)  {
+	public Player getPlayer(Player[] p, Gene g) {
+		int id = Integer.parseInt(g.driver.getID());
+		//return players[g.slot.getWeek()][g.slot.getDay()][id][g.driver.group().ordinal()][cp.getPriority().ordinal()][this.getStrategy().ordinal()];
+		if(p[id].toString().equals(g.driver.getID().toString())) {
+			return p[id];
+		}
+		return p[id];
+		
+	}
+	public static void improveSol(Player player)  {
 		//DriverFactory df = new DriverFactory();
+		Player[] pop = new Player[ProblemParameters.POP_SIZE];
+	
 		int p1 = rnd.nextInt(pop.length);
 		int p2 = rnd.nextInt(pop.length);
+		Player player2 = new Player();
 		//df.getDriverList(); 
+		for (int a = 0; a < pop.length; a++) { //To Display all current Student Information.
+		    //   list[i] = new student();
+		    player = pop[a];
+		    player.initPlayersFixSchedule(player.getViolations(), player.getMetConstraints(), player.getOpenToSwap());
+		    
+		}
 		
 		// need to compare custom constraint priority for each individual, and if one ranks higher than the other, then the slot is allocated to the higher priority case
-		for(String unhappy : pop[p1].getViolations() ) {
-			for(String free : pop[p2].getOpenToSwap()) {
-				String unhappyPerson[] = unhappy.split(",");
-				String weekPreference = unhappyPerson[2];
-				
-				String openToSwapWeek[] = free.split(",");
-				String swapWeek = openToSwapWeek[0];
-				if(swapWeek.contains(weekPreference) && free.contains("must be after")) {
-					// potential swap after one week!
-				} else if (swapWeek.contains(weekPreference) && free.contains("must be before")) {
-					// allocate
-				} else if (swapWeek.contains(weekPreference) && free.contains("must be in")) {
-					// allocate
-				}
-				else if (swapWeek.contains(weekPreference) && free.contains("must not be in")) {
-					// allocate
-				}
-				
-				//String week = Integer.toString(w);
-				int game = game(pop);
-				
-				if(pop[game].calculateUtility() > pop[p2].calculateUtility() ) {
-					//if(!solution.contains(t) && pop[p1].getIntermediate().toString().contains(week)) {
-						
-						//allocated
-					}
-					else {
-						
-					}
-				}
-			}
+//		for(String unhappy : pop[p1].getViolations() ) {
+//			for(String free : pop[p2].getOpenToSwap()) {
+//				String unhappyPerson[] = unhappy.split(",");
+//				String weekPreference = unhappyPerson[2];
+//				
+//				String openToSwapWeek[] = free.split(",");
+//				String swapWeek = openToSwapWeek[0];
+//				if(swapWeek.contains(weekPreference) && free.contains("must be after")) {
+//					// potential swap after one week!
+//					System.out.println("Unhappy person week preference: " + weekPreference + "Swap week: " + swapWeek + "");
+//					System.out.println("Unhappy string: " + unhappy);
+//					System.out.println("Free slot string: " + free);
+//				} else if (swapWeek.contains(weekPreference) && free.contains("must be before")) {
+//					// allocate
+//					System.out.println("Unhappy person week preference: " + weekPreference + "Swap week: " + swapWeek + "");
+//					System.out.println("Unhappy string: " + unhappy);
+//					System.out.println("Free slot string: " + free);
+//				} else if (swapWeek.contains(weekPreference) && free.contains("must be in")) {
+//					// allocate
+//					System.out.println("Unhappy person week preference: " + weekPreference + "Swap week: " + swapWeek + "");
+//					System.out.println("Unhappy string: " + unhappy);
+//					System.out.println("Free slot string: " + free);
+//				}
+//				else if (swapWeek.contains(weekPreference) && free.contains("must not be in")) {
+//					// allocate
+//					System.out.println("Unhappy person week preference: " + weekPreference + "Swap week: " + swapWeek + "");
+//					System.out.println("Unhappy string: " + unhappy);
+//					System.out.println("Free slot string: " + free);
+//				}
+//				
+//				//String week = Integer.toString(w);
+//				int game = game(pop);
+//				
+//				if(pop[game].calculateUtility() > pop[p2].calculateUtility() ) {
+//					//if(!solution.contains(t) && pop[p1].getIntermediate().toString().contains(week)) {
+//						System.out.println("p1 " + pop[game].getUtility());
+//						//allocated
+//					}
+//					else {
+//						System.out.println("p2 " + pop[p2].getUtility());
+//					}
+//				}
+//			}
 			
-		}
+		} 
 	
 	
 	private static int game(Player[] pop) {

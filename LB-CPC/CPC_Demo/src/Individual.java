@@ -23,8 +23,9 @@ public class Individual {
 
 	private int[][][]participants = new int[ProblemParameters.WEEKS][][];
 	private static ArrayList<CustomConstraint> customConstraints;
-	//private BRD brd = new BRD();
+	private BRD brd = new BRD();
 	private Player player = new Player();
+	
 	
 
 	private static int[] targets=null;//Targets from each group
@@ -179,7 +180,7 @@ public class Individual {
 			String[] res =  intermediate.split(":");
 			String driver = res[2]; // driver ID
 			String group = res[4]; // group name
-
+			
 
 				//int found = 0;
 				//player.addOpenToSwap(g.slot.getWeek() + "," +g.slot.getDay() +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(g.slot.getWeek())+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear());
@@ -200,10 +201,21 @@ public class Individual {
 					}
 			
 					else {
+						// 
+						//String[][][][][][] players = new String[ProblemParameters.WEEKS][][][][][];
+						int s = Strategy.SWAP_FREE.ordinal();
+						 String playerVariables = "";
 						if( cp.getSource().contains(g.driver.group().name())&& !cp.getSource().contains(g.driver.getID())) { // group only violations 
 							arrayListSource = "" + g.driver.getID() + "," + g.driver.group().name() + "," + cp.getSource();
+							
+							Strategy strategy = player.setStrategy(cp, g);
+							playerVariables = g.slot.getWeek() + "," + g.slot.getDay() + "," + g.driver.getID() + "," + g.driver.group() + "," + cp.getSource() + "," +strategy;
+							player.addToPlayerVariables(playerVariables);
 							//violations.add(arrayListSource);
-							player.addViolations(arrayListSource);
+							//player.initPlayersFixSchedule(player.getViolations(), player.getMetConstraints(), player.getOpenToSwap());
+							//
+							player.addViolations("violation " + arrayListSource);
+							//player.getF();
 							System.out.println("\t Group Violation " + g.driver.getID() +" "+ g.driver.group().name() + cp.getSource());
 							isFound = false;
 							violation = true;
@@ -211,7 +223,11 @@ public class Individual {
 						else if ((cp.getSource().contains(g.driver.getID()) && !cp.getSource().contains(g.driver.group().name()))) {
 							arrayListSource = "" + g.driver.getID() + "," + g.driver.group().name() + "," + cp.getSource();
 							//violations.add(arrayListSource);
-							player.addViolations(arrayListSource);
+							player.setStrategy(cp, g);
+							Strategy strategy = player.setStrategy(cp, g);
+							playerVariables = g.slot.getWeek() + "," + g.slot.getDay() + "," + g.driver.getID() + "," + g.driver.group() + "," + cp.getSource() + "," +strategy;
+							player.addToPlayerVariables(playerVariables);
+							player.addViolations("violation " + arrayListSource);
 							System.out.println("\t Driver Violation " +  g.driver.getID() + " " + g.driver.group().name() + cp.getSource());
 							violation = true;
 							isFound = false;
@@ -231,7 +247,10 @@ public class Individual {
 					}
 				}
 				if(isFound == false  && violation == false) {
-					player.addOpenToSwap(g.slot.getWeek() + "," +g.slot.getDay() +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(g.slot.getWeek())+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear());
+					player.addOpenToSwap("Open to swap " + g.slot.getWeek() + "," +g.slot.getDay() +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(g.slot.getWeek())+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear());
+					Strategy strategy = player.setStrategyNoConstraints(g);
+					String playerVariables = g.slot.getWeek() + "," + g.slot.getDay() + "," + g.driver.getID() + "," + g.driver.group() + "," + "No Priority" + "," +strategy;
+					player.addToPlayerVariables(playerVariables);
 					System.out.println("\t No clash"+ ","+ g.slot.getWeek() + "," +g.slot.getDay() +"," +
 										g.driver.getID() +"," +g.driver.group().name() + "," +
 										g.driver.getDuty(g.slot.getWeek())+","+
@@ -438,6 +457,24 @@ public class Individual {
 		}
 	}
 
+	public Individual (Individual other) {
+		initParticipants();
+		//Copy constructor
+		this.chromosome = new ArrayList<Gene>();
+		for (Gene og : other.chromosome) {
+			Gene ng = new Gene();
+			ng.driver = og.driver;
+			ng.slot = og.slot;
+			this.chromosome.add(ng);
+		}
+
+		this.free = new ArrayList<TrainingSlot>();
+		for (TrainingSlot s : other.free)
+			this.free.add(s);
+
+		modified = true;
+		intermediateBuffer = new String[chromosome.size()];
+	}
 
 
 	public Individual(Individual p1, Individual p2) throws Exception {
@@ -518,6 +555,7 @@ public class Individual {
 	public void printSol() {
 		//found = false;
 		String[] intermediate = this.getIntermediate();
+		
 		System.out.println("Plan by week / day ");
 		System.out.println("Week, Day, Driver ID, Group, Duty, Expiry Week, Final Year" );
 		//Print by week
@@ -536,9 +574,12 @@ public class Individual {
 						System.out.println();
 						String inter = findIntermediate(intermediate,g);
 
-
+						
 						//Now check custom constraints
 						this.checkCustomConstraints(g, inter);
+						//player.getFullPlayerVariables(g);
+						
+						
 					 }
 				}
 			}
@@ -552,17 +593,20 @@ public class Individual {
 		}
 
 	for(String a : player.getOpenToSwap()) {
-		System.out.println("open to swap:" + a);
+		System.out.println( a);
 	}
 
 	// drivers and groups with met constraints. 
 		// TODO: ensure all drivers in each group have met constraints, the solution currently meets constraints for some and violates for others when group constraints are set.
 		for(String driver : player.getMetConstraints()) {
-			System.out.println("Drivers and groups with met constraints: " + driver);
+			System.out.println(driver);
 		}
 		// violations for each driver and group
 		for(String group : player.getViolations()) {
-			System.out.println("Violations: " + group);
+			System.out.println(group);
+		}
+		for(String s : player.getFullPlayerVariables()) {
+			System.out.println(s); 
 		}
 		
 //		System.out.println("Plan by week / day ");
@@ -656,24 +700,6 @@ public class Individual {
 	}
 
 
-	public Individual (Individual other) {
-		initParticipants();
-		//Copy constructor
-		this.chromosome = new ArrayList<Gene>();
-		for (Gene og : other.chromosome) {
-			Gene ng = new Gene();
-			ng.driver = og.driver;
-			ng.slot = og.slot;
-			this.chromosome.add(ng);
-		}
-
-		this.free = new ArrayList<TrainingSlot>();
-		for (TrainingSlot s : other.free)
-			this.free.add(s);
-
-		modified = true;
-		intermediateBuffer = new String[chromosome.size()];
-	}
 
 	private void verify() throws Exception {
 		/* Verify that the chromsome contains a valid solution */

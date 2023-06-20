@@ -41,9 +41,12 @@ public class Application {
 					switch (choice){
 					    case "1":
 					    	GA.run(true,1);
+					    	choice = "0";
 					        break;
 					    case "2":
 					    	BRD.runBRD(true, 1);
+					    	choice = "0";
+					    	//BRD.improveSol();
 					        break;
 					  
 					    case "?":
