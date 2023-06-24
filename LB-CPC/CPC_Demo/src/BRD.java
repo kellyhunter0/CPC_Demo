@@ -68,16 +68,22 @@ public class BRD {
 			Player[] population = new Player[ProblemParameters.POP_SIZE];
 			int utility = Integer.MAX_VALUE;
 			Player bestResponse =null;
+			ArrayList<String> playerVars = new ArrayList<String>();
+			
 			
 			//System.out.println("Run " + run);
 			for (int x=0; x < population.length; x++) {
 				population[x] = new Player();
-				if (population[x].calculateUtility()>utility) {
-					utility = population[x].calculateUtility();
+				if (population[x].fitness()<utility) {
+					utility = population[x].fitness();
 					bestResponse = population[x];
-					//				System.out.println("Best =" + bestFit);
+									//System.out.println("Best =" + utility);
 				}
 			}
+			if(Player.setGA(false)) {
+				
+			}
+			//while(bestResponse.)
 			
 			int nOperations = 0;
 			int left = ProblemParameters.TIME_OUT;
@@ -85,8 +91,47 @@ public class BRD {
 				System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats()); // gen is the count
 			}
 			
-			if ((nOperations%1000 ==0)&&(verbose))
-				System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats());
+			
+			while(left >0){
+				nOperations++;
+				Player temp = new Player();
+				if (rnd.nextBoolean()) {
+					temp = new Player(population[game(population)]);
+				}else {
+					temp = new Player(population[game(population)],population[game(population)]);
+				}
+				if(rnd.nextBoolean()) {
+					temp.mutate();
+					
+				}
+				else {
+					temp.mutate();
+					break;
+				}
+
+				
+
+
+
+				int rip = rip(population);
+				if (population[rip].fitness() > temp.fitness()) {
+					population[rip] = temp;
+
+					if(temp.fitness()<utility) {
+						left=ProblemParameters.TIME_OUT;
+						bestResponse = temp;
+						utility = temp.fitness();
+					}
+				}
+				left--;
+				if (ProblemParameters.EVALS >= ProblemParameters.MAX_EVALS)
+					left =0; //Force timeout
+				// Only outputs information in the thousands, so 1000, 2000, and so on
+				if ((nOperations%1000 ==0)&&(verbose))
+					System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats());
+
+			}
+
 			
 		}
 	}
@@ -166,14 +211,22 @@ public class BRD {
 	private static int game(Player[] pop) {
 		int p1 = rnd.nextInt(pop.length);
 		int p2 = rnd.nextInt(pop.length);
-		if(pop[p1].calculateUtility() > pop[p2].calculateUtility()) 
+		if(pop[p1].fitness() < pop[p2].fitness()) 
 			return p1;
 		else
 			return p2;
 				
 	}
 	
-
+	private static int rip(Player[] pop) {
+		int p1 = rnd.nextInt(pop.length);
+		int p2 = rnd.nextInt(pop.length);
+		if(pop[p1].fitness() > pop[p2].fitness()) 
+			return p1;
+		else
+			return p2;
+				
+	}
 	
 	// Set of methods 
 	

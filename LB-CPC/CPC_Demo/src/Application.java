@@ -26,7 +26,8 @@ public class Application {
 				ProblemParameters.CUSTOMCONSTRAINTS=c;
 				//			ArrayList<String> constraints = ;
 
-				Individual.setConstraints(RandomBasil.getBasil());
+				
+				
 				//DriverFactory.setSeed();
 				
 				System.out.println("Command Options: ");
@@ -40,11 +41,18 @@ public class Application {
 					do {
 					switch (choice){
 					    case "1":
+					    	Individual.setConstraints(RandomBasil.getBasil());
+					    	Player.setGA(true);
 					    	GA.run(true,1);
 					    	choice = "0";
 					        break;
 					    case "2":
+					    	
+					    	Player.setGA(false);
+					    	if(Player.getGA() == false) {
+					    	Player.setConstraints(RandomBasil.getBasil());
 					    	BRD.runBRD(true, 1);
+					    	}
 					    	choice = "0";
 					    	//BRD.improveSol();
 					        break;

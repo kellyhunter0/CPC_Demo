@@ -67,7 +67,7 @@ public class DriverFactory {
 			System.out.println(d.toCSV());
 		}
 	}
-	private static void newDrivers(int q, Group g) {
+	public static void newDrivers(int q, Group g) {
 		for (int x=0; x < q; x++) {
 			int week = r.nextInt(ProblemParameters.WEEKS-1)+1;
 			int[] duties = new int[ProblemParameters.WEEKS];
