@@ -2013,8 +2013,7 @@ Driver,Group,Duties,Final Year, Expires Week,Training Week, Training Day
  2011,EBT,1:1:1:2:2:1:1:2:1:1:2:1:2:1:1:2:1:1:1:1:1:1:1:2:1:2:2:1:1:1:2:2:2:2:1:2:1:2:1:2:,false,36
  2012,EBT,2:2:1:2:2:2:1:2:1:1:2:2:1:1:1:2:1:2:1:1:1:1:1:1:1:1:1:1:2:2:2:1:1:1:2:1:2:2:1:1:,true,39
  2013,EBT,1:2:2:1:1:2:2:2:1:1:2:1:2:2:1:1:2:1:2:1:2:2:1:1:1:2:2:2:1:1:1:1:1:1:2:1:1:2:2:2:,false,38
-Command Options: 
-1: Run GA
-2: Run BRD
-?: Display
-0: Quit
+1- Run GA
+2- Run BRD
+0- Exit
+Choose your option : 

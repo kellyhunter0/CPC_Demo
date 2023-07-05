@@ -68,7 +68,10 @@ public class BRD {
 			Player[] population = new Player[ProblemParameters.POP_SIZE];
 			int utility = Integer.MAX_VALUE;
 			Player bestResponse =null;
-			ArrayList<String> playerVars = new ArrayList<String>();
+			ArrayList<Profile> profiles = new ArrayList<Profile>();
+			ArrayList<String> violations = new ArrayList<String>();
+			ArrayList<String> open = new ArrayList<String>();
+			
 			
 			
 			//System.out.println("Run " + run);
@@ -80,9 +83,7 @@ public class BRD {
 									//System.out.println("Best =" + utility);
 				}
 			}
-			if(Player.setGA(false)) {
-				
-			}
+
 			//while(bestResponse.)
 			
 			int nOperations = 0;
@@ -95,32 +96,49 @@ public class BRD {
 			while(left >0){
 				nOperations++;
 				Player temp = new Player();
-				if (rnd.nextBoolean()) {
-					temp = new Player(population[game(population)]);
-				}else {
-					temp = new Player(population[game(population)],population[game(population)]);
-				}
-				if(rnd.nextBoolean()) {
-					temp.mutate();
-					
-				}
-				else {
-					temp.mutate();
-					break;
-				}
+				Profile p1 = new Profile();
+				profiles = temp.getProfiles();
+				open = temp.getOpenToSwap();
+				violations = temp.getViolations();
+				
+				
+			if(rnd.nextBoolean())
+				p1.player = new Player(population[game(population)]);
+			else
+				p1.player = new Player(population[game(population)]);
+					//p1.player = temp;
 
+					for(Profile p : profiles ) {
+						//System.out.println(p.driver.getID() + "," + p.driver.group().name()+","+p.player.getViolations());
+						p1 = p;
+						p1.player = p.player;
+						p1.driver = p.driver;
+						p1.slot = p.slot;
+						
+						
+				}
+					//p1.player = temp;
+					
+
+					p1.player.bestResponse(p1);
+					
+
+
+				
+				
+				
 				
 
 
 
 				int rip = rip(population);
-				if (population[rip].fitness() > temp.fitness()) {
-					population[rip] = temp;
+				if (population[rip].fitness() > p1.player.fitness()) {
+					population[rip] = p1.player;
 
-					if(temp.fitness()<utility) {
+					if(p1.player.fitness()<utility) {
 						left=ProblemParameters.TIME_OUT;
-						bestResponse = temp;
-						utility = temp.fitness();
+						bestResponse = p1.player;
+						utility = p1.player.fitness();
 					}
 				}
 				left--;
@@ -156,7 +174,7 @@ public class BRD {
 		for (int a = 0; a < pop.length; a++) { //To Display all current Student Information.
 		    //   list[i] = new student();
 		    player = pop[a];
-		    player.initPlayersFixSchedule(player.getViolations(), player.getMetConstraints(), player.getOpenToSwap());
+		    //player.initPlayersFixSchedule(player.getViolations(), player.getMetConstraints(), player.getOpenToSwap());
 		    
 		}
 		

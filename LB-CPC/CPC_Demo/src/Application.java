@@ -1,13 +1,21 @@
 import java.io.BufferedReader;
+
+import static java.lang.System.exit;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class Application {
 
 	public static void main(String[] args) {
+		
+		String[] options = {"1- Run GA",
+			                "2- Run BRD",
+			                "0- Exit",
+};
 		
 		try {
 			String dataset = args[0];
@@ -19,65 +27,84 @@ public class Application {
 				ProblemParameters.DATASET_FILE = args[0].split("=")[1];
 			
 			DriverFactory.toCSV();
-			int[] constraints = {10};
+			int[] constraints = {25};
 
 
 			for (int c : constraints) {
 				ProblemParameters.CUSTOMCONSTRAINTS=c;
-				//			ArrayList<String> constraints = ;
-
-				
-				
+				//ArrayList<CustomConstraint> customConstraints = new ArrayList<CustomConstraint>();				
 				//DriverFactory.setSeed();
 				
-				System.out.println("Command Options: ");
-				System.out.println("1: Run GA");
-				System.out.println("2: Run BRD");
-				System.out.println("?: Display");
-				System.out.println("0: Quit");
-				try (Scanner scan = new Scanner(System.in)) 
-				{
-					String choice = scan.nextLine();
-					do {
-					switch (choice){
-					    case "1":
-					    	Individual.setConstraints(RandomBasil.getBasil());
-					    	Player.setGA(true);
-					    	GA.run(true,1);
-					    	choice = "0";
-					        break;
-					    case "2":
-					    	
-					    	Player.setGA(false);
-					    	if(Player.getGA() == false) {
-					    	Player.setConstraints(RandomBasil.getBasil());
-					    	BRD.runBRD(true, 1);
-					    	}
-					    	choice = "0";
-					    	//BRD.improveSol();
-					        break;
-					  
-					    case "?":
-					            System.out.println("Command Options: ");
-								System.out.println("1: Run GA");
-								System.out.println("2: Run BRD");
-								System.out.println("?: Display");
-								System.out.println("0: Quit");
-					            break;
-					        }  }while (!choice.equals("0"));
-					}
+				
+		        Scanner scanner = new Scanner(System.in);
+		        int option = 1;
+		        while (option!=0){
+		            printMenu(options);
+			            try {
+			                option = scanner.nextInt();
+			                switch (option){
+		                    case 1: 
+		                    	runGAOption(); 
+		                    break;
+		                    case 2: 
+		                    	runBRDOption(); 
+		                    break;
+		                    case 0: 
+		                    	exit(0);
+		                }
+		            }
+		            catch (InputMismatchException ex){
+		                System.out.println("Please enter an integer value between 1 and " + options.length);
+		                scanner.next();
+		            }
+		            catch (Exception ex){
+		                System.out.println("An unexpected error happened. Please try again");
+		                scanner.next();
+		            }
+		        }
 
-				}
-				
-				
-				
-			
-
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
+   public static void printMenu(String[] options){
+        for (String option : options){
+            System.out.println(option);
+        }
+        System.out.print("Choose your option : ");
+   }
+	   
+	// Options
+   private static void runGAOption() {
+	        System.out.println("Running GA");
+	    	Individual.setConstraints(RandomBasil.getBasil());
+	    	Player.setGA(true);
+	    	try {
+				GA.run(true,10);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    	
+   }
+   private static void runBRDOption() {
+	        System.out.println("Thanks for choosing option 2");
+	    	Player.setGA(false);
+	    	if(Player.getGA() == false) {
+	    	Player.setConstraints(RandomBasil.getBasil());
+	    	try {
+				BRD.runBRD(true, 1);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	   	}
+	}
+	    private static void option3() {
+	        System.out.println("Thanks for choosing option 3");
+	    }
+	
 	public static ArrayList<String> readConstraints() {
 
 		ArrayList<String> res = new ArrayList<String>();
