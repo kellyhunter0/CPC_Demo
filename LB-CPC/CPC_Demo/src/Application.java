@@ -27,7 +27,7 @@ public class Application {
 				ProblemParameters.DATASET_FILE = args[0].split("=")[1];
 			
 			DriverFactory.toCSV();
-			int[] constraints = {25};
+			int[] constraints = {10};
 
 
 			for (int c : constraints) {
@@ -44,7 +44,7 @@ public class Application {
 			                option = scanner.nextInt();
 			                switch (option){
 		                    case 1: 
-		                    	runGAOption(); 
+		                    	runGAOption();option=0; 
 		                    break;
 		                    case 2: 
 		                    	runBRDOption(); 

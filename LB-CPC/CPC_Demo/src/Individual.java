@@ -13,7 +13,7 @@ public class Individual {
 	private ArrayList<Gene> chromosome;
 	private ArrayList<TrainingSlot> free;
 	private boolean modified = true;
-	private int fitness;
+	private int fitness = 0;
 	private int expired=0;
 	private int lates=0;
 	private int groupImbalanced=0;
@@ -130,6 +130,9 @@ public class Individual {
 			lates=0;
 			expired=0;
 			groupImbalanced=0;
+			lowConstraintViolations = 0;
+			mediumConstraintViolations = 0;
+			highConstraintViolations = 0;
 
 			//Count participants from each group.
 			for (int x=0;x < participants.length; x++ ) {
@@ -256,6 +259,10 @@ public class Individual {
 	private void checkCustomConstraints() {
 
 		String[] intermediate = this.getIntermediate();
+		int h=0;	
+		int m=0;
+		int l=0;
+
 		for (CustomConstraint cp : customConstraints) {
 				if (!cp.mustAppear()) {
 				boolean f = false;
@@ -264,86 +271,83 @@ public class Individual {
 					Matcher matcher = cp.getPattern().matcher(i);
 					if (matcher.find()) {
 						f = true;
+						break;
 					}
-					else {
+				}
+				for (String i : intermediate) {
+					Matcher matcher = cp.getPattern().matcher(i);
+					if (!matcher.find()) {	
+					
+						
 						String[] intermediateSplit = i.split(":");
 						String id = intermediateSplit[2];
 						String group = intermediateSplit[4];
 						if(cp.getPriority() == ConstraintPriority.high && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							highConstraintViolations++;
+							f = false;
 						}
 						else if (cp.getPriority() == ConstraintPriority.medium && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							mediumConstraintViolations++;
+							f = false;
 						}
 						else if (cp.getPriority() == ConstraintPriority.low && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							lowConstraintViolations++;
+							f = false;
 						}
-						f = false;
+						
 					}
 				}
-				if(!f) {
-				int p=0;		
-					if (cp.getPriority() == ConstraintPriority.high) {
-						p = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION * highConstraintViolations;
-						fitness = fitness + p;
-					}
-					else if (cp.getPriority() == ConstraintPriority.medium ) {
-						p = ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION * mediumConstraintViolations;
-						fitness = fitness + p;
-					}
-					else if (cp.getPriority() == ConstraintPriority.low ) {
-						p = ProblemParameters.PENALTY_LOW_CONSTRAINT_VIOLATION  * lowConstraintViolations;
-						fitness = fitness + p;
-					}
-					else {
-					fitness = fitness + p;
-					}
-				}
+
+
+
+				
 			}else {
 				boolean found = false;
 				for (String i : intermediate) {
 					Matcher matcher = cp.getPattern().matcher(i);
 					if (matcher.find()) {
 						found = true;
+						break;
 					}
-					else {
+				}
+				for (String i : intermediate) {
+					Matcher matcher = cp.getPattern().matcher(i);
+					if (!matcher.find()) {	
+					
+						
 						String[] intermediateSplit = i.split(":");
 						String id = intermediateSplit[2];
 						String group = intermediateSplit[4];
 						if(cp.getPriority() == ConstraintPriority.high && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							highConstraintViolations++;
+							found = false;
 						}
 						else if (cp.getPriority() == ConstraintPriority.medium && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							mediumConstraintViolations++;
+							found = false;
 						}
 						else if (cp.getPriority() == ConstraintPriority.low && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							lowConstraintViolations++;
+							found = false;
 						}
-						found = false;
+						
 					}
-
 				}
 				
-				if(!found) {
-					int p=0;
-					if (cp.getPriority() == ConstraintPriority.high) {
-						p = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION * highConstraintViolations;
-						fitness = fitness + p;
-					}
-					else if (cp.getPriority() == ConstraintPriority.medium ) {
-						p = ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION  * mediumConstraintViolations;
-						fitness = fitness + p;
-					}
-					else if (cp.getPriority() == ConstraintPriority.low ) {
-						p = ProblemParameters.PENALTY_LOW_CONSTRAINT_VIOLATION * lowConstraintViolations;
-						fitness = fitness + p;						
-					}
-					else {
-						fitness = fitness + p;
-					}
-				}
+				
+
 			}
 		}
+		h = ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION;
+		//fitness = fitness + h;
+
+		m = ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION;
+
+		l = ProblemParameters.PENALTY_LOW_CONSTRAINT_VIOLATION ;
+		//fitness = fitness + l;
+		fitness = fitness + (h * highConstraintViolations);
+		fitness = fitness + (m*mediumConstraintViolations);
+		fitness = fitness + (l*lowConstraintViolations);
 	}
 	
 	private void checkImbalance() { // O(p * d * g), where g is the number of groups, and d is the number of drivers
@@ -417,13 +421,24 @@ public class Individual {
 		//Bias towards early shift & unexpired
 
 		int idx = rnd.nextInt(free.size());
+		int nidx = 0;
 
 		for (int tries =0; tries <=150; tries++) {
 			TrainingSlot s = free.get(idx);
 			int week = s.getWeek();
 			if (d.finalYear()) {
-				if (week <= d.getExpiresWeek())
+				if (week <= d.getExpiresWeek()) {
 					break;
+				}
+//				else {
+//					idx = rnd.nextInt(free.size());
+//					s = free.get(idx);
+//					week = s.getWeek();
+//					if (d.finalYear()) {
+//						if (week <= d.getExpiresWeek())
+//							break;
+//					}
+//				}
 			}else {
 
 				int duty = d.getDuty(week);

@@ -15,6 +15,6 @@
     <booleanAttribute key="org.eclipse.jdt.launching.ATTR_USE_START_ON_FIRST_THREAD" value="true"/>
     <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="Application"/>
     <stringAttribute key="org.eclipse.jdt.launching.MODULE_NAME" value="CPC_Demo"/>
-    <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="seed=135"/>
+    <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="seed=480"/>
     <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="CPC_Demo"/>
 </launchConfiguration>
