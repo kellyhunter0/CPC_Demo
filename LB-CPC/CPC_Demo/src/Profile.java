@@ -5,6 +5,7 @@ public class Profile {
 
 	public Player player;
 	public Driver driver;
+	public Strategy strategy;
 	public TrainingSlot slot;
 	public CustomConstraint cp;
 

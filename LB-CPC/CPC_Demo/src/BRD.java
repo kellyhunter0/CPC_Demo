@@ -108,32 +108,15 @@ public class BRD {
 				p1.player = new Player(population[game(population)]);
 					//p1.player = temp;
 
-					for(Profile p : profiles ) {
-						//System.out.println(p.driver.getID() + "," + p.driver.group().name()+","+p.player.getViolations());
-						p1 = p;
-						p1.player = p.player;
-						p1.driver = p.driver;
-						p1.slot = p.slot;
-						
-						
-				}
 					//p1.player = temp;
 					
 
-					p1.player.bestResponse(p1);
-					
+					p1.player.bestResponse();
+					//p1 = 
 
-
-				
-				
-				
-				
-
-
-
-				int rip = rip(population);
-				if (population[rip].fitness() > p1.player.fitness()) {
-					population[rip] = p1.player;
+				int fit = fitness(population);
+				if (population[fit].fitness() > p1.player.fitness()) {
+					population[fit] = p1.player;
 
 					if(p1.player.fitness()<utility) {
 						left=ProblemParameters.TIME_OUT;
@@ -145,7 +128,7 @@ public class BRD {
 				if (ProblemParameters.EVALS >= ProblemParameters.MAX_EVALS)
 					left =0; //Force timeout
 				// Only outputs information in the thousands, so 1000, 2000, and so on
-				if ((nOperations%1000 ==0)&&(verbose))
+				if ((verbose))
 					System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats());
 
 			}
@@ -236,7 +219,7 @@ public class BRD {
 				
 	}
 	
-	private static int rip(Player[] pop) {
+	private static int fitness(Player[] pop) {
 		int p1 = rnd.nextInt(pop.length);
 		int p2 = rnd.nextInt(pop.length);
 		if(pop[p1].fitness() > pop[p2].fitness()) 
