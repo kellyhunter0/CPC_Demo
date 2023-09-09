@@ -94,7 +94,7 @@ public class Application {
 	    	if(Player.getGA() == false) {
 	    	Player.setConstraints(RandomBasil.getBasil());
 	    	try {
-				BRD.runBRD(true, 1);
+				BRD.runBRD(true, 5);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

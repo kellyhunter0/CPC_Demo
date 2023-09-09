@@ -271,7 +271,7 @@ public class Individual {
 					Matcher matcher = cp.getPattern().matcher(i);
 					if (matcher.find()) {
 						f = true;
-						break;
+						//break;
 					}
 				}
 				for (String i : intermediate) {
@@ -307,7 +307,7 @@ public class Individual {
 					Matcher matcher = cp.getPattern().matcher(i);
 					if (matcher.find()) {
 						found = true;
-						break;
+						//break;
 					}
 				}
 				for (String i : intermediate) {

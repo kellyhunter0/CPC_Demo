@@ -56,6 +56,7 @@ import java.util.regex.Matcher;
 
 public class BRD {
 	private static Random rnd = new Random();
+	public static int fit;
 //	private ArrayList<Gene> chromosome;
 //	private ArrayList<TrainingSlot> free;
 //	private Player[] pop;
@@ -64,14 +65,19 @@ public class BRD {
 	 */
 	public static void runBRD(boolean verbose, int runs) throws Exception {
 		for(int run = 0; run < runs; run++) {
+			
+			long start = System.currentTimeMillis();
 			ProblemParameters.EVALS = 0;
 			Player[] population = new Player[ProblemParameters.POP_SIZE];
 			int utility = Integer.MAX_VALUE;
+			fit = utility;
 			Player bestResponse =null;
-			ArrayList<Profile> profiles = new ArrayList<Profile>();
-			ArrayList<String> violations = new ArrayList<String>();
-			ArrayList<String> open = new ArrayList<String>();
-			
+//			ArrayList<Profile> profiles = new ArrayList<Profile>();
+//			ArrayList<Player> players = new ArrayList<Player>();
+//			ArrayList<Player> tempList = new ArrayList<Player>();
+//			ArrayList<String> violations = new ArrayList<String>();
+//			ArrayList<String> open = new ArrayList<String>();
+
 			
 			
 			//System.out.println("Run " + run);
@@ -89,30 +95,17 @@ public class BRD {
 			int nOperations = 0;
 			int left = ProblemParameters.TIME_OUT;
 			if(verbose) {
-				System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats()); // gen is the count
+				System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats() ); // gen is the count
 			}
 			
 			
 			while(left >0){
 				nOperations++;
-				Player temp = new Player();
 				Profile p1 = new Profile();
-				profiles = temp.getProfiles();
-				open = temp.getOpenToSwap();
-				violations = temp.getViolations();
-				
-				
-			if(rnd.nextBoolean())
-				p1.player = new Player(population[game(population)]);
-			else
-				p1.player = new Player(population[game(population)]);
-					//p1.player = temp;
 
-					//p1.player = temp;
 					
-
-					p1.player.bestResponse();
-					//p1 = 
+				  p1.player = new Player(population[game(population)]);
+				  p1.player.bestResponse();
 
 				int fit = fitness(population);
 				if (population[fit].fitness() > p1.player.fitness()) {
@@ -128,12 +121,19 @@ public class BRD {
 				if (ProblemParameters.EVALS >= ProblemParameters.MAX_EVALS)
 					left =0; //Force timeout
 				// Only outputs information in the thousands, so 1000, 2000, and so on
-				if ((verbose))
-					System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats());
-
+				//if ((nOperations%1000 ==0)&&(verbose))
+					System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats()); // gen is the count
 			}
-
 			
+//			System.out.println("Final");
+			long elapsed = System.currentTimeMillis() - start;
+			double millisEval = elapsed / (double)ProblemParameters.EVALS;
+			System.out.println("DataSet,"+ProblemParameters.DATASET_SEED+",Constraints,"+ProblemParameters.CUSTOMCONSTRAINTS+ ",run,"+run+"," +bestResponse.stats()+",Evals,"+ProblemParameters.EVALS+",MiilsEval,"+millisEval+",elapsed,"+elapsed);
+//			best.printSummary();
+			if (verbose) {
+				bestResponse.printSol();
+				
+			}
 		}
 	}
 	
