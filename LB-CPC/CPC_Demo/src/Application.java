@@ -27,7 +27,7 @@ public class Application {
 				ProblemParameters.DATASET_FILE = args[0].split("=")[1];
 			
 			DriverFactory.toCSV();
-			int[] constraints = {10};
+			int[] constraints = {5};
 
 
 			for (int c : constraints) {
@@ -81,7 +81,7 @@ public class Application {
 	    	Individual.setConstraints(RandomBasil.getBasil());
 	    	Player.setGA(true);
 	    	try {
-				GA.run(true,10);
+				GA.run(true,5);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

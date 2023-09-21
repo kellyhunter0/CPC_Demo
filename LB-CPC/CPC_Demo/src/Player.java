@@ -48,7 +48,7 @@ public class Player {
 		strategy = Strategy.SWAP_FREE; // default		
 		driversList = new ArrayList<Driver>();
 		
-		if(ga == false) {
+		if(ga == false || ga == true) {
 			init();
 			if (targets==null) {
 				int tDrivers = DriverFactory.getDriverList().size();
@@ -116,7 +116,20 @@ public class Player {
 			swaps = new ArrayList<String>();
 
 	}
+	public ArrayList<Profile> addProfiles(Profile p) {
+		if(playerProfile == null) {
+			playerProfile = new ArrayList<Profile>();
+		}
+		else {
+			playerProfile.add(p);
+		}
+		return playerProfile;
+	}
 	public ArrayList<Profile> getProfiles() {
+		return playerProfile;
+	}
+	public ArrayList<Profile> setProfiles(ArrayList<Profile> playerProfile) {
+		this.playerProfile = playerProfile;
 		return playerProfile;
 	}
 
@@ -277,7 +290,7 @@ public class Player {
 	//allocate maybe?
 	public void bestResponse() {
 		openToSwap = new ArrayList<String>();
-		violations = getAllViolations();
+		//violations = getAllViolations();
 		count = 0;
 		Profile p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
 		Profile p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
@@ -285,6 +298,10 @@ public class Player {
 		if(playersList == null) {
 			playersList = new ArrayList<Player>();
 		}
+		if(playerProfile == null) {
+			playerProfile = createPlayerProfile();
+		}
+
 		for(CustomConstraint c : customConstraints) {
 			if(c.getSource().contains(p1.driver.getID()) || c.getSource().contains(p1.driver.group().name())) {
 				p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
@@ -377,7 +394,7 @@ public class Player {
 					if(c.getSource().contains("before") && (p2.slot.getWeek() >= cw && p1.slot.getWeek() < cw)) { 
 						swap =p1.driver.getID() + ","+p1.slot.getWeek()+","+p1.slot.getDay()+","+p1.cp.getSource() + ":" + p2.driver.getID() + ","+p2.slot.getWeek()+","+p2.slot.getDay();
 						openToSwap.add(swap);
-						playersList.add(p1.player);
+						//playersList.add(p1.player);
 						b= true;	
 						return b;
 					} 
@@ -385,7 +402,7 @@ public class Player {
 					else if(c.getSource().contains("after") && (p2.slot.getWeek() <= cw && p1.slot.getWeek() > cw)) { 
 						swap =p1.driver.getID() + ","+p1.slot.getWeek()+","+p1.slot.getDay()+","+p1.cp.getSource() + ":" + p2.driver.getID() + ","+p2.slot.getWeek()+","+p2.slot.getDay();
 						openToSwap.add(swap);
-						playersList.add(p1.player);
+						//playersList.add(p1.player);
 						b= true;
 						return b;
 					}
@@ -394,7 +411,7 @@ public class Player {
 					 else if(c.getSource().contains("in") && p2.slot.getWeek() != cw) { // must not be in this week
 							swap =p1.driver.getID() + ","+p1.slot.getWeek()+","+p1.slot.getDay()+","+p1.cp.getSource() + ":" + p2.driver.getID() + ","+p2.slot.getWeek()+","+p2.slot.getDay();
 							openToSwap.add(swap);
-							playersList.add(p1.player);
+							//playersList.add(p1.player);
 							b = true;
 							return b;
 						}
@@ -416,14 +433,14 @@ public class Player {
 					if(c.getSource().contains("before") && (p2.slot.getWeek() < week && p1.slot.getWeek() > week)) { // p2 must be before and have no violations, p1 must be after to be in violation 
 						swap =p1.driver.getID() + ","+p1.slot.getWeek()+","+p1.slot.getDay()+","+p1.cp.getSource() + ":" + p2.driver.getID() + ","+p2.slot.getWeek()+","+p2.slot.getDay();
 						openToSwap.add(swap);
-						playersList.add(p1.player);
+						//playersList.add(p1.player);
 						b = true;
 						return b;
 					}
 					else if(c.getSource().contains("after") && (p2.slot.getWeek() > week && p1.slot.getWeek() < week)) { // p2 must be after and have no violations, p1 must be before to be in violation
 						swap =p1.driver.getID() + ","+p1.slot.getWeek()+","+p1.slot.getDay()+","+p1.cp.getSource() + ":" + p2.driver.getID() + ","+p2.slot.getWeek()+","+p2.slot.getDay();
 						openToSwap.add(swap);
-						playersList.add(p1.player);
+						//playersList.add(p1.player);
 						b = true;
 						return b;
 					}
@@ -437,7 +454,7 @@ public class Player {
 					 if(c.getSource().contains("in") && c.getSource().contains(w)) { // must be in this week
 							swap =p1.driver.getID() + ","+p1.slot.getWeek()+","+p1.slot.getDay()+","+p1.cp.getSource() + ":" + p2.driver.getID() + ","+p2.slot.getWeek()+","+p2.slot.getDay();
 							openToSwap.add(swap);
-							playersList.add(p1.player);
+						//	playersList.add(p1.player);
 							b = true;
 							return b;
 						}
@@ -530,9 +547,7 @@ public class Player {
 		try {
 			free.addAll(SlotFactory.getSlotSet() ) ;
 
-			//Now create genes
 		for (Driver d : DriverFactory.getDriverList()) {
-			//Gene g = new Gene();
 			Profile p = new Profile();
 			p.driver = d;
 			p.slot = getRndUnalloc(d);
@@ -757,28 +772,12 @@ public class Player {
 		strategy = randomEnum(Strategy.class);
 		Strategy strategy = randomEnum(Strategy.class);
         //System.out.println("Strategy: " + strategy);
-          if(strategy.equals(Strategy.SWAP_LOW) ) {
-                  while(strategy.equals(Strategy.SWAP_LOW)) {
-                    strategy = randomEnum(Strategy.class);
-                    }
- 
- 
-          }
-          else if (strategy.equals(Strategy.SWAP_FREE)) {
+		if (strategy.equals(Strategy.SWAP_FREE)) {
               while(strategy.equals(Strategy.SWAP_FREE)) {
             	  strategy = randomEnum(Strategy.class);
               }
           }
           
-        
-        if(!strategy.equals(Strategy.SWAP_LOW) || !strategy.equals(Strategy.SWAP_FREE) ){
-          while(strategy.equals(Strategy.SWAP_LOW)|| strategy.equals(Strategy.SWAP_FREE)) {
-            if(!strategy.equals(Strategy.SWAP_HIGH) || !strategy.equals(Strategy.SWAP_MEDIUM) ){
-            	strategy = randomEnum(Strategy.class);
-            }
-
-          }
-       }
         return strategy;
 	}
 
@@ -877,17 +876,17 @@ public class Player {
 						String group = intermediateSplit[4];
 						if(cp.getPriority() == ConstraintPriority.high && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							if(violations.size()==0)
+							//if(violations.size()==0)
 								addViolations("violation " + arrayListSource);
 						}
 						else if (cp.getPriority() == ConstraintPriority.medium && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							if(violations.size()==0)
+							//if(violations.size()==0)
 								addViolations("violation " + arrayListSource);
 						}
 						else if (cp.getPriority() == ConstraintPriority.low && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
 							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							if(violations.size()==0)
+							//if(violations.size()==0)
 								addViolations("violation " + arrayListSource);
 						}
 						
