@@ -27,7 +27,7 @@ public class Application {
 				ProblemParameters.DATASET_FILE = args[0].split("=")[1];
 			
 			DriverFactory.toCSV();
-			int[] constraints = {5};
+			int[] constraints = {4};
 
 
 			for (int c : constraints) {
@@ -47,7 +47,7 @@ public class Application {
 		                    	runGAOption();option=0; 
 		                    break;
 		                    case 2: 
-		                    	runBRDOption(); 
+		                    	runBRDOption();option=0; 
 		                    break;
 		                    case 0: 
 		                    	exit(0);
@@ -81,7 +81,7 @@ public class Application {
 	    	Individual.setConstraints(RandomBasil.getBasil());
 	    	Player.setGA(true);
 	    	try {
-				GA.run(true,5);
+				GA.run(true,10);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -89,16 +89,13 @@ public class Application {
 	    	
    }
    private static void runBRDOption() {
-	        System.out.println("Thanks for choosing option 2");
+	        System.out.println("Running BRD");
 	    	Player.setGA(false);
 	    	if(Player.getGA() == false) {
 	    	Player.setConstraints(RandomBasil.getBasil());
-	    	try {
-				BRD.runBRD(true, 5);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+
+				BRD.runBRD(true, 10);
+
 	   	}
 	}
 	    private static void option3() {

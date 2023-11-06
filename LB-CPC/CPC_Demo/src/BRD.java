@@ -63,66 +63,104 @@ public class BRD {
 	/*
 	 * This function will run Best Response Dynamics, also known as Better Response Dynamics, as a means of comparison to the GA
 	 */
-	public static void runBRD(boolean verbose, int runs) throws Exception {
+	public static void runBRD(boolean verbose, int runs)  {
+		int lowFree = 0;
+		
 		for(int run = 0; run < runs; run++) {
-			
+			ArrayList<String> high = new ArrayList<String>();
+			ArrayList<String> med = new ArrayList<String>();
+			ArrayList<String> low = new ArrayList<String>();
 			long start = System.currentTimeMillis();
+			verbose = true;
 			ProblemParameters.EVALS = 0;
-			Player[] population = new Player[ProblemParameters.POP_SIZE];
+			Player[] player1 = new Player[ProblemParameters.POP_SIZE];
+			//Player[] player2 = new Player[ProblemParameters.POP_SIZE];
 			int utility = Integer.MAX_VALUE;
 			fit = utility;
 			Player bestResponse =null;
+			//Player bestResponse2 =null;
+			
 //			ArrayList<Profile> profiles = new ArrayList<Profile>();
 //			ArrayList<Player> players = new ArrayList<Player>();
 //			ArrayList<Player> tempList = new ArrayList<Player>();
 //			ArrayList<String> violations = new ArrayList<String>();
-//			ArrayList<String> open = new ArrayList<String>();
-
+		//ArrayList<TrainingSlot> open = new ArrayList<TrainingSlot>();
+			
+		//	open = SlotFactory.getSlotSet();
+			
 			
 			
 			//System.out.println("Run " + run);
-			for (int x=0; x < population.length; x++) {
-				population[x] = new Player();
-				if (population[x].fitness()<utility) {
-					utility = population[x].fitness();
-					bestResponse = population[x];
+			for (int x=0; x < player1.length; x++) {
+				
+				player1[x] = new Player();
+				
+				if (player1[x].fitness()<utility) {
+					utility = player1[x].fitness();
+					bestResponse = player1[x];
+					
 									//System.out.println("Best =" + utility);
 				}
 			}
 
-			//while(bestResponse.)
 			
+			Player.setHighFree(high);
+			Player.setLowFree(low);
+			Player.setMediumFree(med);
+			//while(bestResponse.)
+
 			int nOperations = 0;
 			int left = ProblemParameters.TIME_OUT;
 			if(verbose) {
 				System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats() ); // gen is the count
 			}
-			
+
 			
 			while(left >0){
 				nOperations++;
 				Profile p1 = new Profile();
-
+			//	Profile p2 = new Profile();
+				
 					
-				  p1.player = new Player(population[game(population)]);
-				  p1.player.bestResponse();
+				  p1.player = new Player(player1[game(player1)]);
+				 // p1.player.swapsBool = false;
 
-				int fit = fitness(population);
-				if (population[fit].fitness() > p1.player.fitness()) {
-					population[fit] = p1.player;
+				 //p1.player.bestResponse();
+
+				 
+				 // p2.player = new Player(player2[game(player2)]);
+				 // p2.player.bestResponse();
+
+				//  for(TrainingSlot s :)
+				  while(!p1.player.bestResponse()) {
+						  p1.player.bestResponse();
+					  
+				  }
+
+
+				int fit = fitness(player1);
+				//int fit2 = fitness(player2);
+				if (player1[fit].fitness() > p1.player.fitness()) {
+					player1[fit] = p1.player;
 
 					if(p1.player.fitness()<utility) {
 						left=ProblemParameters.TIME_OUT;
 						bestResponse = p1.player;
 						utility = p1.player.fitness();
+	
 					}
 				}
+
+				//p1.player.bestResponse();
+				
+
 				left--;
 				if (ProblemParameters.EVALS >= ProblemParameters.MAX_EVALS)
 					left =0; //Force timeout
 				// Only outputs information in the thousands, so 1000, 2000, and so on
-				//if ((nOperations%1000 ==0)&&(verbose))
-					System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats()); // gen is the count
+				if (nOperations%1000 ==0 && verbose) 
+					System.out.println(nOperations + ",left,"+left+"," +bestResponse.stats() + " "); // gen is the count
+			//	}
 			}
 			
 //			System.out.println("Final");

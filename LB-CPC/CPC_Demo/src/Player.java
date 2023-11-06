@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import java.util.regex.Matcher;
 
@@ -9,11 +10,18 @@ public class Player {
 	private ArrayList<String> metConstraints;
 	// Drivers who have no constraints set and are open to swap
 	private ArrayList<String> openToSwap;
+	// Drivers who have no constraints set and are open to swap
+	private static ArrayList<String> lowFree;
+	// Drivers who have no constraints set and are open to swap
+	private static ArrayList<String> highFree;
+	// Drivers who have no constraints set and are open to swap
+	private static ArrayList<String> mediumFree;
 	// drivers who have constraint violations
 	private ArrayList<String> violations; // repair function
 	private ArrayList<String> fullPlayerVariables; // repair function
 	private ArrayList<Player> playersList;
 	private ArrayList<Driver> driversList;
+	private List<String> pf;
 	private ArrayList<TrainingSlot> free;
 	private ArrayList<String> swaps = new ArrayList<String>();;
 	private static ArrayList<CustomConstraint> customConstraints;
@@ -30,13 +38,16 @@ public class Player {
 	private int lowConstraintViolations=0;
 	private int mediumConstraintViolations=0;
 	private int highConstraintViolations=0;
-	private int highSwapCount;
-	private int lowHighCount = 0;
-	private int mediumSwapCount = 0;
+	private int expiredSwaps = 0;
+	private int highFreeCount= 0;
+	private int lowHighCount= 0;
+	private int lowMediumCount = 0;
+	private int mediumHighCount = 0;
+	private int mediumFreeCount=0;
 	
-	private	int count;
-	private static boolean ga = false;
-	public boolean swapsBool = false;
+	private	int count;  //number of violations or potential swaps
+	private static boolean ga = false; // checks if GA is running
+	public boolean swapsBool = false; // checks for a swap
 	
 	private static int[] targets=null;//Targets from each group
 	private String[] intermediateBuffer;
@@ -69,6 +80,7 @@ public class Player {
 
 			}
 		}
+
 
 		if(violations == null)
 			violations = new ArrayList<String>();
@@ -154,7 +166,7 @@ public class Player {
 	}
 }
 	
-	private void checkCustomConstraints(Profile g, String intermediate) {
+	public void checkCustomConstraints(Profile g, String intermediate, ArrayList<CustomConstraint> customConstraints) {
 		
 		String arrayListSource = "";
 		boolean isFound = false;
@@ -165,6 +177,12 @@ public class Player {
 		playersList = new ArrayList<Player>();
 		violations = new ArrayList<String>();
 		openToSwap = new ArrayList<String>();
+		Profile p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+		
+		if(customConstraints==null) {
+			
+		}
+			
 		for (CustomConstraint cp : customConstraints) {
 			
 			String[] res =  intermediate.split(":");
@@ -197,6 +215,7 @@ public class Player {
 							System.out.println("\t Group Violation " + g.driver.getID() +" "+ g.driver.group().name() + cp.getSource());
 							isFound = false;
 							violation = true;
+
 						}
 						else if ((cp.getSource().contains(g.driver.getID()) && !cp.getSource().contains(g.driver.group().name()))) {
 							arrayListSource = "" + g.driver.getID() + "," + g.driver.group().name() + "," + cp.getSource();
@@ -212,6 +231,7 @@ public class Player {
 							System.out.println("\t Driver Violation " +  g.driver.getID() + " " + g.driver.group().name() + cp.getSource());
 							violation = true;
 							isFound = false;
+			
 						}
 						if(group.equals(temp[1]) && !driver.equals(temp[1])) {
 
@@ -245,132 +265,342 @@ public class Player {
 			}
 				
 
-				
-
-
-			
-
-	public ArrayList<Profile> createPlayerProfile(){
-		if(driversList == null)
-			driversList = DriverFactory.getDriverList();
-		if(playerProfile == null) {
-			playerProfile = new ArrayList<Profile>();
-			Profile p = new Profile();
-			free = new ArrayList<TrainingSlot>();
-			try {
-				free = SlotFactory.getSlotSet();
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			for(Driver d : DriverFactory.getDriverList()) {
-				try {
-					for(TrainingSlot s : free) {
-						p.driver = d;
-						p.slot = s;
-						p.player = this;
-						playerProfile.add(p);
-						
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-				
-			}
-			
-		}
-		
-		return playerProfile;
-		
-	}
-	
-	
 	//allocate maybe?
-	public void bestResponse() {
+	//allocate maybe?
+	public boolean bestResponse(){
+		int run = 0;
 		openToSwap = new ArrayList<String>();
 		//violations = getAllViolations();
 		count = 0;
 		Profile p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
 		Profile p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
-		int w = 0;
+
+		//ArrayList<TrainingSlot> slots = new ArrayList<TrainingSlot>();
+		
+		
 		if(playersList == null) {
 			playersList = new ArrayList<Player>();
 		}
 		if(playerProfile == null) {
 			playerProfile = createPlayerProfile();
+			//slots = SlotFactory.getSlotSet();
 		}
-
+		//if(slots!=null) {
+		for(Profile p : playerProfile) {
 		for(CustomConstraint c : customConstraints) {
+			
 			if(c.getSource().contains(p1.driver.getID()) || c.getSource().contains(p1.driver.group().name())) {
 				p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
-				 p1.cp = c;		
-				 if(p1.driver.finalYear()) {
-					 break;
-				 }
-				 for(int i = 1; i<=2;i++) {
-					 if(p1.driver.getDuty(i) == 2 || p2.driver.getDuty(i) == 2) {
-						 break;
-					 }
-				 }
-				if(c.getSource().contains("high") || c.getSource().contains("medium") || c.getSource().contains("low")){
-					while(checkForSwap(p1,p2,c)) {
-						if(checkForSwap(p1,p2,c)) {
-							swapsBool  = true;
-							TrainingSlot tmp;
-							tmp = p1.slot;
-							p1.slot = p2.slot;
-							p2.slot = tmp;
+				 p1.cp = c;	
+				// violations = getViolations();
+				 //while(p1.cp!=null) {
+				if(!p1.cp.getSource().equals(null)){
+					//while(violations != null) {
+					//swapsBool = false;
+				//	if(highest == lowConstraintViolations) {
+						while(checkForSwap(p1,p2,c)) {
+							if(checkForSwap(p1,p2,c)) {
+								
+								swapsBool  = true;
+								TrainingSlot tmp;
+								tmp = p1.slot;
+								p1.slot = p2.slot;
+								p2.slot = tmp;
+								return swapsBool;
+								
+							}
+							else {
+								p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+								if(checkForSwap(p1,p2,c)) {
+									swapsBool  = true;
+									TrainingSlot tmp;
+									tmp = p1.slot;
+									p1.slot = p2.slot;
+									p2.slot = tmp;
+									return swapsBool;
+										
+								}
+								else {
+									p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+									if(checkForSwap(p1,p2,c)) {
+										swapsBool = true;
+										TrainingSlot tmp;
+										tmp = p1.slot;
+										p1.slot = p2.slot;
+										p2.slot = tmp;
+										return swapsBool;
+									}
+								}
+							}
+							if(swapsBool == true) {
+								
+								p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+								p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+								if(checkForSwap(p1,p2,c)) {
+									swapsBool  = true;
+									TrainingSlot tmp;
+									tmp = p1.slot;
+									p1.slot = p2.slot;
+									p2.slot = tmp;
+									return swapsBool;
+
+										
+								}
+								else {
+									p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+									if(checkForSwap(p1,p2,c)) {
+										swapsBool = true;
+										TrainingSlot tmp;
+										tmp = p1.slot;
+										p1.slot = p2.slot;
+										p2.slot = tmp;
+										return swapsBool;
+									}
+								}
+								return swapsBool;
+							}
+							return swapsBool;
 						}
-						else {
-							swapsBool = false;
-						}
+
+				//}
+
 					}
+				else if(p1.cp == null) {
+					p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+					swapsBool = false;
+					return swapsBool;
 				}
+				//}
+				//}
+			}
+
+			else if(c.getSource().contains(p2.driver.getID()) || c.getSource().contains(p2.driver.group().name())) {
+				p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+				 p2.cp = c;	
+				 //violations = getViolations();
+				 //while(p1.cp!=null) {
+				// swapsBool = false;
+				if(!p2.cp.getSource().equals(null)){
+					//while(violations != null) {
+					//if(highest == lowConstraintViolations) {
+						while(checkForSwap(p2,p1,c)) {
+							if(checkForSwap(p2,p1,c)) {
+								
+								swapsBool  = true;
+								TrainingSlot tmp;
+								tmp = p2.slot;
+								p2.slot = p1.slot;
+								p1.slot = tmp;
+								return swapsBool;
+								
+							}
+							else {
+								p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+								if(checkForSwap(p2,p1,c)) {
+									
+									swapsBool  = true;
+									TrainingSlot tmp;
+									tmp = p2.slot;
+									p2.slot = p1.slot;
+									p1.slot = tmp;
+									return swapsBool;
+
+									
+								}
+								else {
+									p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+									if(checkForSwap(p2,p1,c)) {
+										swapsBool  = true;
+										TrainingSlot tmp;
+										tmp = p2.slot;
+										p2.slot = p1.slot;
+										p1.slot = tmp;
+										return swapsBool;
+									}
+								}
+							}
+							if(swapsBool == true) {
+								
+								p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+								p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+								if(checkForSwap(p2,p1,c)) {
+									
+									swapsBool  = true;
+									TrainingSlot tmp;
+									tmp = p2.slot;
+									p2.slot = p1.slot;
+									p1.slot = tmp;
+									return swapsBool;
+	
+									
+								}
+								else {
+									p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+									if(checkForSwap(p2,p1,c)) {
+										swapsBool = true;
+										TrainingSlot tmp;
+										tmp = p2.slot;
+										p2.slot = p1.slot;
+										p1.slot = tmp;
+										return swapsBool;
+									}
+								}
+								return swapsBool;
+							}
+							return swapsBool;
+						}
+
+			//	}
+					}
+				else if(p2.cp == null) {
+					p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+					swapsBool = false;
+					return swapsBool;
+				}
+				//}
+				//}
 			}
 			else {
 				 p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+				 p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+				 swapsBool = false;
+				 return swapsBool;
 			}
+			
 		}
-	}
+		//return swapsBool;
+		}
+		return swapsBool;
+		}
+	//	}	
+
+	
 		
-	public boolean checkForSwap(Profile p1, Profile p2, CustomConstraint c) {
+	public boolean checkForSwap(Profile p1, Profile p2, CustomConstraint c ) {
 		boolean b = false;
 		openToSwap = new ArrayList<String>();
  // 	if p1 has constraints set and p2 does not
-			if(!c.getSource().contains(p2.driver.group().name()) || !c.getSource().contains(p2.driver.getID())) {
-				 if(p2.driver.finalYear() || p1.driver.finalYear()) {
-					 b = false;
-				 }
-				if (mustAppear(c,p1,p2)) {
-					b = true;
-					return b;
-				}
-		}
-			else if((p1.cp.getSource().contains("high") && p2.cp.getSource().contains("low")) || (p2.cp.getSource().contains("high") && p1.cp.getSource().contains("low"))) {
-				if (mustAppear(c,p1,p2)) {
-					b = true;
-					return b;
-				}
+		
+			if( c.getSource().contains(p1.driver.group().name()) || c.getSource().contains(p1.driver.getID())) {
+				p1.cp = c;
 				
-			}
-			else if((p1.cp.getSource().contains("high") && p2.cp.getSource().contains("medium")) || (p2.cp.getSource().contains("high") && p1.cp.getSource().contains("medium"))) {
-				if (mustAppear(c,p1,p2)) {
-					b = true;
-					return b;
+				 
+				if(checkExpiry(p1) || checkExpiry(p2)) {
+					
+					 if(p2.driver.finalYear()  && !p1.driver.finalYear()) {
+						 if(p2.driver.getExpiresWeek() > p2.slot.getWeek() && p2.driver.getExpiresWeek() < p1.slot.getWeek()) {
+								b = true;
+								return b;
+								
+						 } 
+					 }
+					 
+					 else if(p1.driver.finalYear() && !p2.driver.finalYear()) {
+						 if(p1.driver.getExpiresWeek() > p1.slot.getWeek() && p1.driver.getExpiresWeek() < p2.slot.getWeek()) {
+
+								b=true;
+								return b;
+						 }
+					 }
+					 else if(p1.driver.finalYear() && p2.driver.finalYear()) {
+						 if((p1.driver.getExpiresWeek() > p1.slot.getWeek() && p2.driver.getExpiresWeek() > p2.slot.getWeek() )&& (p1.driver.getExpiresWeek() < p2.slot.getWeek() && p2.driver.getExpiresWeek() < p1.slot.getWeek())) {
+								b = true;
+								return b;
+							// }
+						 }
+					 }
+					 else {
+						 b = false;
+						 return b;
+					 }
+
+				 }
+				else {
+					if(!p1.driver.finalYear() && !p2.driver.finalYear()) {
+					if(mustAppear(c,p1,p2)) {
+						b = true;
+						return b;
+					}
 				}
 			}
-			else if((p1.cp.getSource().contains("medium") && p2.cp.getSource().contains("low")) || (p1.cp.getSource().contains("medium") && p2.cp.getSource().contains("low"))){
-				if (mustAppear(c,p1,p2)) {
-					b = true;
-					return b;
-				}
+				//}
 			}
+			else if(c.getSource().contains(p2.driver.group().name()) || c.getSource().contains(p2.driver.getID())) {
+				p2.cp = c;
+				
+
+				//while(!b) {
+				  if(checkExpiry(p2) || checkExpiry(p1)) {
+					 if(p2.driver.finalYear()  && !p1.driver.finalYear()) {
+						 if(p2.driver.getExpiresWeek() > p2.slot.getWeek() && p2.driver.getExpiresWeek() < p1.slot.getWeek()) {
+							// if(mustAppear(c,p2,p1)) {
+								b = true;
+		
+								return b;
+							// }
+						 } 
+					 }
+					 else if(p1.driver.finalYear() && !p2.driver.finalYear()) {
+						 if(p1.driver.getExpiresWeek() > p1.slot.getWeek() && p1.driver.getExpiresWeek() < p2.slot.getWeek()) {
+							// if(mustAppear(c,p2,p1)) {
+								b = true;
+								return b;
+							// }
+						 }
+					 }
+					 else if(p1.driver.finalYear() && p2.driver.finalYear()) {
+						 if((p1.driver.getExpiresWeek() > p1.slot.getWeek() && p2.driver.getExpiresWeek() > p2.slot.getWeek() )&& (p1.driver.getExpiresWeek() < p2.slot.getWeek() && p2.driver.getExpiresWeek() < p1.slot.getWeek())) {
+							// if(mustAppear(c,p2,p1)) {
+								b = true;
+								return b;
+							// }
+						 }
+					 }
+					 else {
+						 b = false;
+						 return b;
+					 }
+				 }
+					else {
+						if(!p1.driver.finalYear() && !p2.driver.finalYear()) {
+						if(mustAppear(c,p2,p1)) {
+							b = true;
+							return b;
+						}
+						 else {
+							 b = false;
+							 return b;
+						 }
+					}
+				}
+				//}
+	
+//			if((p1.cp.getSource().contains("high") && c.getSource().contains("low")) || (c.getSource().contains("high") && p1.cp.getSource().contains("low"))) {
+//			if (mustAppear(c,p1,p2)) {
+//					b = true;
+//					return b;
+//				}
+//				
+//			}
+//			else if((p1.cp.getSource().contains("high") && c.getSource().contains("medium")) || (c.getSource().contains("high") && p1.cp.getSource().contains("medium"))) {
+//				if (mustAppear(c,p1,p2)) {
+//					b = true;
+//					return b;
+//				}
+//			}
+//			else if((p1.cp.getSource().contains("medium") && c.getSource().contains("low")) || (c.getSource().contains("medium") && p1.cp.getSource().contains("low"))){
+//				if (mustAppear(c,p1,p2)) {
+//					b = true;
+//					return b;
+//				}
+//			}
+		}
 			else {
-				p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
-				b = false;
-				return b;
+				 
+				 p1 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+				 p2 = playerProfile.get(rnd.nextInt(playerProfile.size()));
+				 b = false;
+				 return b;
 			}
 
 	return b;
@@ -385,6 +615,7 @@ public class Player {
 			int cw;
 			String swap;
 			Boolean b = false;
+		 if(!checkExpiry(p1) && !checkExpiry(p2)) {
 			if(!c.mustAppear()){
 				constraint = c.getSource().split("\\s+");
 				constraintWeek = constraint[7]; // constraint string is longer as it has must not instead of must
@@ -466,8 +697,53 @@ public class Player {
 						}
 				}
 		}
+	}
+		 else {
+			 b = false;
+			 return b;
+		 }
 			return b;
 	}
+
+			
+
+	public ArrayList<Profile> createPlayerProfile(){
+		if(driversList == null)
+			driversList = DriverFactory.getDriverList();
+		if(playerProfile == null) {
+			playerProfile = new ArrayList<Profile>();
+			Profile p = new Profile();
+			free = new ArrayList<TrainingSlot>();
+			try {
+				free = SlotFactory.getSlotSet();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			for(Driver d : DriverFactory.getDriverList()) {
+				try {
+					for(TrainingSlot s : free) {
+						p.driver = d;
+						p.slot = s;
+						p.player = this;
+						playerProfile.add(p);
+						
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				
+			}
+			
+		}
+		
+		return playerProfile;
+		
+	}
+	
+
     // Function to remove duplicates from an ArrayList
     public ArrayList<Player> removeDuplicates(ArrayList<Player> list)
     {
@@ -571,13 +847,24 @@ public class Player {
 		fullPlayerVariables = new ArrayList<String>();
 		for (Profile og : other.playerProfile) {
 			Profile ng = new Profile();
-			ng.driver = og.driver;
-			ng.slot = og.slot;
-			ng.player = og.player;
-			playerProfile.add(ng); 
+			if(og.cp != null ) {
+				if(og.cp.getSource().contains("high") || og.cp.getSource().contains("medium") || og.cp.getSource().contains("low")) {
+					ng.driver = og.driver;
+					ng.slot = og.slot;
+					ng.player = og.player;
+					playerProfile.add(ng);
+				}
+			}
+			else {
+				ng.driver = og.driver;
+				ng.slot = og.slot;
+				ng.player = og.player;
+				playerProfile.add(ng);
+			}
 			//fullPlayerVariables.add(ng.slot.getWeek() + "," + ng.slot.getDay() + "," + ng.driver.getID() + "," + ng.driver.group() + "," + cp.getSource() + "," +strategy);
+			
 		}
-
+		//bestResponse();
 		intermediateBuffer = new String[playerProfile.size()];
 	}
 
@@ -630,7 +917,39 @@ public class Player {
 	public ArrayList<String> getFullPlayerVariables() {
 		return fullPlayerVariables;
 	}
-	
+
+
+
+	public static ArrayList<String> getHighFree() {
+		if(highFree == null) {
+			highFree = new ArrayList<String>();
+		}
+		return highFree;
+	}
+	public static ArrayList<String> getMediumFree() {
+		if(mediumFree == null) {
+			mediumFree = new ArrayList<String>();
+		}
+		return highFree;
+	}
+	public static ArrayList<String> getLowFree() {
+		if(lowFree == null) {
+			lowFree = new ArrayList<String>();
+		}
+		return highFree;
+	}
+	public static ArrayList<String> setHighFree(ArrayList<String> highFree) {
+		Player.highFree = highFree;
+		return highFree;
+	}
+	public static  ArrayList<String> setMediumFree(ArrayList<String> mediumFree) {
+		Player.mediumFree = mediumFree;
+		return mediumFree;
+	}
+	public static ArrayList<String> setLowFree(ArrayList<String> lowFree) {
+		Player.lowFree = lowFree;
+		return lowFree;
+	}
 	public ArrayList<String> setFullPlayerVariables(ArrayList<String> fullPlayerVariables) {
 		this.fullPlayerVariables = fullPlayerVariables;
 		return fullPlayerVariables;
@@ -797,8 +1116,11 @@ public class Player {
 		//			e.printStackTrace();
 		//			System.exit(-1);
 		//		}
-
+		//lowFree = new ArrayList<String>();
+		//mediumFree = new ArrayList<String>();
+		//highFree = new ArrayList<String>();
 		if (modified) {
+
 			ProblemParameters.EVALS++;
 			modified = false;
 			payoff =0;
@@ -808,6 +1130,8 @@ public class Player {
 			lowConstraintViolations=0;
 			mediumConstraintViolations=0;
 			highConstraintViolations=0;
+
+			
 			
 			//count=0;
 			//Count participants from each group.
@@ -822,31 +1146,51 @@ public class Player {
 			
 
 
-			for (Profile g : playerProfile) {
+			for (Profile p : playerProfile) {
 				
-				if (this.checkLate(g)) {
+				if (this.checkLate(p)) {
 					payoff = payoff + ProblemParameters.PENALTY_LATE_SHIFT;
 					lates++;
 				}
 				//Check for training after expiry
-				if (this.checkExpiry(g)) {
+				if (this.checkExpiry(p)) {
 					payoff = payoff + ProblemParameters.PENALTY_EXPIRED_LICENSE;
 					expired++;
 				}else {
 				//Encourage training as far before expiry as possible
-					if (g.driver.finalYear())
-						payoff = payoff + (g.slot.getWeek()/g.driver.getExpiresWeek())*ProblemParameters.PENALTY_ADVANCE_FINAL_WEEK;
+					if (p.driver.finalYear())
+						payoff = payoff + (p.slot.getWeek()/p.driver.getExpiresWeek())*ProblemParameters.PENALTY_ADVANCE_FINAL_WEEK;
 				}
-				String s = g.driver.getID().trim();
+				String s = p.driver.getID().trim();
 				int id = Integer.parseInt(s);
 				//String[] intermediate = this.getIntermediate();
 				//String inter = this.findIntermediate(intermediate, g);
 				
 				
 				//Log participation
-				players[g.slot.getWeek()][g.slot.getDay()][g.driver.group().ordinal()]++;
+				players[p.slot.getWeek()][p.slot.getDay()][p.driver.group().ordinal()]++;
 
-
+//				if(highFree != null) {
+//					for(String hf: highFree) {
+//						if(highFree.contains(p.driver.getID())) {
+//							highFreeCount++;
+//						}
+//					}
+//				}
+//				if(mediumFree != null) {
+//					for(String mf: mediumFree) {
+//						if(mf.contains(p.driver.getID())) {
+//							mediumFreeCount++;
+//						}
+//					}
+//				}
+//				if(lowFree != null) {
+//					for(String lf: lowFree) {
+//						if(lf.contains(p.driver.getID())) {
+//							lowFreeCount++;
+//						}
+//					}
+//				}
 			}
 
 			//Check for imbalance in participants
@@ -855,74 +1199,12 @@ public class Player {
 			for(int a = 0; a <= getViolations().size()-1; a++) {
 				count++;
 			}
+			violations = getViolations();
 
-		}
+		}                      
 			return payoff;
 		}
 		
-	private ArrayList<String> getAllViolations() {
-		violations = new ArrayList<String>();
-		String[] intermediate = this.getIntermediate();
-		for (CustomConstraint cp : customConstraints) {
-				if (!cp.mustAppear()) {
-
-				for (String i : intermediate) {
-					Matcher matcher = cp.getPattern().matcher(i);
-					if (!matcher.find()) {	
-					
-						
-						String[] intermediateSplit = i.split(":");
-						String id = intermediateSplit[2];
-						String group = intermediateSplit[4];
-						if(cp.getPriority() == ConstraintPriority.high && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
-							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							//if(violations.size()==0)
-								addViolations("violation " + arrayListSource);
-						}
-						else if (cp.getPriority() == ConstraintPriority.medium && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
-							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							//if(violations.size()==0)
-								addViolations("violation " + arrayListSource);
-						}
-						else if (cp.getPriority() == ConstraintPriority.low && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
-							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							//if(violations.size()==0)
-								addViolations("violation " + arrayListSource);
-						}
-						
-					}
-				}				
-			}else {
-				for (String i : intermediate) {
-					Matcher matcher = cp.getPattern().matcher(i);
-					if (!matcher.find()) {	
-						String[] intermediateSplit = i.split(":");
-						String id = intermediateSplit[2];
-						String group = intermediateSplit[4];
-						if(cp.getPriority() == ConstraintPriority.high && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
-							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							if(violations.size()==0)
-								addViolations("violation " + arrayListSource);
-						}
-						else if (cp.getPriority() == ConstraintPriority.medium && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
-							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							
-							if(violations.size()==0)
-								addViolations("violation " + arrayListSource);
-						}
-						else if (cp.getPriority() == ConstraintPriority.low && (cp.getSource().contains(id)|| cp.getSource().contains(group))) {
-							String arrayListSource = "" + id + "," + group + "," + cp.getSource();
-							if(violations.size()==0)
-								addViolations("violation " + arrayListSource);
-						}
-					}
-				}
-			}
-		}
-
-		return violations;
-		
-	}
 	
 	private void checkCustomConstraints() {
 
@@ -1031,10 +1313,6 @@ public class Player {
 
 			c++;
 		}
-		//		String buffer = "";
-		//		for (String s : intermediateBuffer) {
-		//			//			buffer = buffer + s;
-		//		}
 		return intermediateBuffer;
 	}
 	private void checkImbalance() { // O(p * d * g), where g is the number of groups, and d is the number of drivers
@@ -1090,7 +1368,7 @@ public class Player {
 		Profile other = playerProfile.get(rnd.nextInt(playerProfile.size()));
 		int otherID = Integer.parseInt(other.driver.getID());
 		if(pop[id].getStrategy()== Strategy.SWAP_HIGH && pop[otherID].getStrategy() == Strategy.SWAP_FREE) {
-			highSwapCount++;
+			highFreeCount++;
 			payoff = payoff - ProblemParameters.PENALTY_HIGH_CONSTRAINT_VIOLATION; // payoff is 10
 			return payoff;
 			
@@ -1101,7 +1379,7 @@ public class Player {
 			return payoff;
 		}
 		else if(pop[id].getStrategy()== Strategy.SWAP_MEDIUM && pop[otherID].getStrategy() == Strategy.SWAP_FREE) {
-			mediumSwapCount++;
+			mediumFreeCount++;
 			payoff = payoff - ProblemParameters.PENALTY_MEDIUM_CONSTRAINT_VIOLATION; // payoff is 5
 			return payoff;
 			
@@ -1134,10 +1412,10 @@ public class Player {
 
 						
 						//Now check custom constraints
-						this.checkCustomConstraints(p, inter);
+						this.checkCustomConstraints(p, inter, customConstraints);
+						//printSol();
 						//player.getFullPlayerVariables(g);
-						
-						
+
 					 }
 				}
 			}
@@ -1146,9 +1424,10 @@ public class Player {
 	public String getPlayers(Profile g) {
 		return  g.slot.getWeek() + "," + g.slot.getDay() + "," + g.driver.getID() + "," + g.driver.group() + "," + "No Priority" + "," +strategy;
 	}
-	
+
 	public String stats() {
 		
-		return  "fit," +payoff +",lates,"+lates +",expired,"+expired +",imbalance,"+groupImbalanced +",low," +lowConstraintViolations +",med," +mediumConstraintViolations+",high," +highConstraintViolations +",swaps," +count;
+		return  "fit," +payoff +",lates,"+lates +",expired,"+expired +",imbalance,"+groupImbalanced +",low," +lowConstraintViolations +",med," +mediumConstraintViolations+",high," 
+				+highConstraintViolations +",totalViolations," +count;
 	}
 }

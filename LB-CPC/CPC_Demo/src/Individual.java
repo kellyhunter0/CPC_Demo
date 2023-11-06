@@ -425,7 +425,7 @@ public class Individual {
 		modified = true;
 		//mutate
 		if (rnd.nextBoolean()) {
-			//Sawp
+			//Swap
 			Gene g1 = chromosome.get(rnd.nextInt(chromosome.size()));
 
 
@@ -550,7 +550,7 @@ public class Individual {
 		//found = false;
 		String[] intermediate = this.getIntermediate();
 		ArrayList<Profile> temp = new ArrayList<Profile>();
-		
+		int gaFit = 0;
 		System.out.println("Plan by week / day ");
 		System.out.println("Week, Day, Driver ID, Group, Duty, Expiry Week, Final Year" );
 		//Print by week
@@ -573,7 +573,7 @@ public class Individual {
 						//Now check custom constraints
 						this.checkCustomConstraints(g, inter);
 						//player.getFullPlayerVariables(g);
-						
+						gaFit = fitness();
 						
 					 }
 					
@@ -591,63 +591,137 @@ public class Individual {
 				profile = p;
 				temp.add(profile);
 			}
-			
-			boolean isFound = false;
-			boolean violation = false;
-			
-			for(Profile p : temp) {
-					profile = p;
-					profile.driver = p.driver;
-					profile.slot = p.slot;
-					profile.player = p.player;
-					//profile.driver = p.driver;
-					String inter = profile.player.findIntermediate(intermediate,p);
-					String[] res =  inter.split(":");
-					String driver = res[2]; // driver ID
-					String group = res[4]; // group name
-					int count = 0;
+			int swaps = 0;
+			for(Profile p1 : temp) {
+				for(CustomConstraint c : customConstraints) {
+					Profile p2 = temp.get(rnd.nextInt(temp.size()));
+					if((c.getSource().contains(p1.driver.getID()) || c.getSource().contains(p1.driver.group().name())) && 
+							(!c.getSource().contains(p2.driver.getID()) || c.getSource().contains(p2.driver.group().name()))) {
+						p1.cp = c;
+						
+						while(p1.player.checkForSwap(p1, p2, c)) {
 
-				for(CustomConstraint cp : customConstraints) {
-					count++;
-					if(count == customConstraints.size()-1  ) {
-						//String[] cpCheck = cp.getSource().split(" "); // allows checks to be made to see if it is a group or driver violation
-							// find the intermediate string and see if there is a constraint that has been met
-							Matcher matcher = cp.getPattern().matcher(inter);
-							if (!matcher.find()) { // finds a constraint that has not been met
-								//System.out.println("Violations");
-								if(cp.getSource().contains(p.driver.getID()) || cp.getSource().contains(p.driver.group().name())) {
-									//int count = 0;
-									p.cp = cp;
-									
-									//p.player.bestResponse();
-									System.out.println("VIOLATION\t" + p.slot.getWeek() + "," + p.slot.getDay() + "," + p.driver.getID() + "," + p.driver.group() + "," + p.cp.getSource());
-									isFound = false;
-									violation = true;
-									//count++;
-									//if cou
-									
-								// check for people with met constraints and only consider swap with drivers who have broken constraints
-								}
-								
-							}
-							else {
-								if(cp.getSource().contains(p.driver.getID()) || cp.getSource().contains(p.driver.group().name())) {
-									p.cp = cp;
-									System.out.println("FOUND\t" +p.slot.getWeek() + "," + p.slot.getDay() + "," + p.driver.getID() + "," + p.driver.group() + "," + p.cp.getSource());
-									isFound = true;
-									violation = false;
-								}
-							}
-}
-
+							System.out.println("Old p1 slot" + p1.slot.getWeek() + "," +p1.slot.getDay());
+							System.out.println("Old p2 slot" + p2.slot.getWeek() + "," +p2.slot.getDay());
+							TrainingSlot tmp;
+							tmp = p1.slot;
+							p1.slot = p2.slot;
+							p2.slot = tmp;
+							System.out.println("New p1 slot" + p1.slot.getWeek() + "," +p1.slot.getDay());
+							System.out.println("New p2 slot" + p2.slot.getWeek() + "," +p2.slot.getDay());
+							swaps++;
 						}
-				if(isFound == false  && violation == false) {
-					 
-					System.out.println("FREE\t"+p.slot.getWeek() + "," + p.slot.getDay() + "," + p.driver.getID() + "," + p.driver.group());
-				
-		
-					
+					}
 				}
+			}
+			int fit = 0;
+			int brdExpiryCount = 0;
+			int brdLates = 0;
+			int violations = lowConstraintViolations + mediumConstraintViolations + highConstraintViolations;
+			System.out.println("REPAIR - BRD");		
+			System.out.println("Plan by week / day ");
+			System.out.println("Week, Day, Driver ID, Group, Duty, Expiry Week, Final Year" );
+			//Print by week
+			for (int week =0; week < ProblemParameters.WEEKS; week++) {
+				for (int day =0; day < 7; day ++) {
+					for (Profile g : temp) {
+						if ((g.slot.getWeek() == week) && (g.slot.getDay()==day)) {
+							
+							System.out.print(week + "," +day +"," + g.driver.getID() +"," +g.driver.group().name() + "," +g.driver.getDuty(week)+","+g.driver.getExpiresWeek() + ","+g.driver.finalYear() );
+							if (g.player.checkExpiry(g)) {
+									System.out.print("\tLICENSE EXPIRED!");
+									brdExpiryCount++;
+							}
+
+							if (g.player.checkLate(g)) {
+								System.out.print("\tON LATE DUTY!");
+								brdLates++;
+								}
+							
+							System.out.println();
+							String inter = g.player.findIntermediate(intermediate,g);
+
+							
+							//Now check custom constraints
+							g.player.checkCustomConstraints(g, inter, customConstraints);
+							//player.getFullPlayerVariables(g);
+							
+							
+						 }
+						
+					}
+				}
+			}
+			//checkCustomConstraints();
+			//Profile p1 = new Profile();
+			int count = 0;
+
+			System.out.println("BRD Violation count" + violations);
+			System.out.println("BRD Expiry count" + brdExpiryCount);
+			System.out.println("BRD Lates count" + brdLates);
+			System.out.println("BRD Swaps count" + swaps);
+			System.out.println("BRD fitness" + gaFit);
+			System.out.println("GA fitness" + gaFit);
+			
+			
+			//Gene g1 = new Gene();
+			//int GAcount = 0;
+
+			//System.out.println("GA Violation count" +GAcount);
+			
+//			boolean isFound = false;
+//			boolean violation = false;
+//			
+//			for(Profile p : temp) {
+//				Profile profile = new Profile();
+//							//profile.driver = p.driver;
+//					
+//					//String[] res =  inter.split(":");
+//					//String driver = res[2]; // driver ID
+//					//String group = res[4]; // group name
+//					int count = 0;
+//
+//				for(CustomConstraint cp : customConstraints) {
+//					count++;
+//					if(count == customConstraints.size()-1  ) {
+//						profile = p;
+//						profile.driver = p.driver;
+//						profile.slot = p.slot;
+//						profile.player = p.player;
+//						String inter = profile.player.findIntermediate(intermediate,p);
+//						//String[] cpCheck = cp.getSource().split(" "); // allows checks to be made to see if it is a group or driver violation
+//							// find the intermediate string and see if there is a constraint that has been met
+//							Matcher matcher = cp.getPattern().matcher(inter);
+//							if (matcher.find()) { // finds a constraint that has not been met
+//								profile.cp = cp;
+//								System.out.println("FOUND\t" +profile.slot.getWeek() + "," + profile.slot.getDay() + "," + profile.driver.getID() + "," + profile.driver.group() + "," + profile.cp.getSource());
+//								isFound = true;
+//								violation = false;
+//									//count++;
+//									//if cou
+//								// check for people with met constraints and only consider swap with drivers who have broken constraints
+//								}
+//								
+//							}
+//							else {
+//								//System.out.println("Violations");
+//								if(cp.getSource().contains(profile.driver.getID()) || cp.getSource().contains(profile.driver.group().name())) {
+//									//int count = 0;
+//									profile.cp = cp;
+//									//p.player.bestResponse();
+//									System.out.println("VIOLATION\t" + profile.slot.getWeek() + "," + profile.slot.getDay() + "," + profile.driver.getID() + "," + profile.driver.group() + "," + p.cp.getSource());
+//									isFound = false;
+//									violation = true;
+//		
+//								}
+//							}
+//}
+//				if(isFound == false  && violation == false) {
+//					System.out.println("FREE\t"+profile.slot.getWeek() + "," + profile.slot.getDay() + "," + profile.driver.getID() + "," + profile.driver.group());
+//						}
+//
+//					
+//				}
 				
 			}
 			
@@ -678,7 +752,7 @@ public class Individual {
 
 		*/
 
-	}
+	
 	private String[] intermediateBuffer;
 
 	public String[] getIntermediate() {
